@@ -8,7 +8,6 @@ const ENDPOINT = "api";
 
 // importing all modules routes:
 const adminRouter = require("./modules/admin/routes/admin.routes");
-const campaignRouter = require("./modules/campaign/routes/campaign.routes");
 const activityRouter = require("./modules/activity/routes/activity.routes");
 const categoryRouter = require("./modules/categories/routes/categories.routes");
 
@@ -16,7 +15,6 @@ function router(app) {
     app.use(express.json());
     
     app.use(`/${ENDPOINT}/${VERSION}/admins`, adminRouter);
-    app.use(`/${ENDPOINT}/${VERSION}/campaigns`, campaignRouter);
     app.use(`/${ENDPOINT}/${VERSION}/activity`, activityRouter);
     app.use(`/${ENDPOINT}/${VERSION}/categories`, categoryRouter);
 }

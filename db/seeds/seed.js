@@ -40,8 +40,9 @@ exports.seed = (knex) => {
           id: user1,
           name: "Rahul",
           email: "rahul@gmail.com",
-          mobile: "9318462049",
           password: `${await password("admin")}`,
+          campaign_id: "9318462049616163e1-b5eb-41d1-80cb-b6cc92318e3b",
+          status: true,
           created_at: "2022-12-28",
           modified_at: "2022-12-28",
           is_deleted: 0,
@@ -50,39 +51,11 @@ exports.seed = (knex) => {
           id: user2,
           name: "Yadav",
           email: "yadav@gmail.com",
-          mobile: "9717841330",
           password: `${await password("admin")}`,
+          campaign_id: "9318462049616163e1-b5eb-41d1-80cb-b6cc92318e3b",
+          status: true,
           created_at: "2022-12-28",
           modified_at: "2022-12-28",
-          is_deleted: 0,
-        },
-      ]);
-    })  
-    .then(async () => {
-      const salt = await bcrypt.genSalt();
-      const password = async (pass) => {
-        const hashedPassword = await bcrypt.hash(String(pass), salt);
-        return hashedPassword;
-      }
-      return knex("campaign_login").insert([
-        {
-          id: campaign1,
-          name: "Nexa",
-          email: "nexa@maruti.com",
-          password: `${await password("marutinexa")}`,
-          status: 1,
-          created_at: "2022-12-29",
-          modified_at: "2022-12-29",
-          is_deleted: 0,
-        },
-        {
-          id: campaign2,
-          name: "Yadav",
-          email: "yadav@plutos.one",
-          password: `${await password("plutos.one")}`,
-          status: 1,
-          created_at: "2022-12-29",
-          modified_at: "2022-12-29",
           is_deleted: 0,
         },
       ]);

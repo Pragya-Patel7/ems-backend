@@ -36,10 +36,8 @@ const createAdmin = async (req, res) => {
     if (!data) return Response.error(res, ApiError.badRequest("Enter inputs!"));
     try {
         const admin = await AdminService.newAdmin(data);
-        const token = await JwtUtils.generateToken(admin);
 
         const result = {
-            token: token,
             admin: admin
         }
         return Response.success(res, "New admin created successfully!", result);

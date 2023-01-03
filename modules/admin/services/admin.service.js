@@ -18,7 +18,8 @@ class AdminService {
                 id: admin.id,
                 name: admin.name,
                 email: admin.email,
-                mobile: admin.mobile,
+                campaign_id: admin.campaign_id,
+                status: admin.status,
             }
             adminArr.push(obj);
         })
@@ -33,8 +34,16 @@ class AdminService {
 
         if (!admin.length)
             throw ApiError.notFound("Admin does not exists!");
- 
-        return admin;
+
+        const shortAdmin = {
+            id: admin.id,
+            name: admin.name,
+            email: admin.email,
+            campaign_id: admin.campaign_id,
+            status: admin.status,
+        }
+
+        return shortAdmin;
     }
 
     async newAdmin(data) {
@@ -45,13 +54,6 @@ class AdminService {
         if (fetchWithEmail.length)
             throw ApiError.alreadyExists("This email is already used!")
 
-        const fetchWithMobile = await Admin.query()
-            .select("mobile")
-            .where("mobile", "=", data.mobile);
-
-        if (fetchWithMobile.length)
-            throw ApiError.alreadyExists("This mobile no. is already used!")
-
         const salt = await bcrypt.genSalt();
         const hashedPassword = await bcrypt.hash(data.password, salt);
 
@@ -59,8 +61,9 @@ class AdminService {
             id: uuidv4(),
             name: data.name,
             email: data.email,
-            mobile: data.mobile,
             password: hashedPassword,
+            campaign_id: data.campaign_id,
+            status: data.campaign_id,
             is_deleted: false,
         });
 
@@ -68,7 +71,8 @@ class AdminService {
             id: newAdmin.id,
             name: newAdmin.name,
             email: newAdmin.email,
-            mobile: newAdmin.mobile,
+            campaign_id: newAdmin.campaign_id,
+            status: newAdmin.status,
         }
 
         return admin;
@@ -82,11 +86,10 @@ class AdminService {
             throw ApiError.notAuthorized("Cannot change password here...");
 
         const fetchAdmin = await Admin.query()
-            .select("*")
-            .where("id", "=", id)
+            .findById(id)
             .where("is_deleted", "=", 0);
-        
-        if (!fetchAdmin.length)
+
+        if (!fetchAdmin)
             throw ApiError.badRequest("Admin does not exists!");
 
         const fetchedAdminUpdate = await Admin.query().patchAndFetchById(id, data);
@@ -97,7 +100,8 @@ class AdminService {
             id: fetchedAdminUpdate.id,
             name: fetchedAdminUpdate.name,
             email: fetchedAdminUpdate.email,
-            mobile: fetchedAdminUpdate.mobile
+            campaign_id: fetchedAdminUpdate.campaign_id,
+            status: fetchedAdminUpdate.status
         };
 
         return response;
@@ -108,14 +112,13 @@ class AdminService {
             throw ApiError.badRequest("Admin Id is required!");
 
         const fetchAdmin = await Admin.query()
-            .select("*")
-            .where("id", "=", id)
+            .findById(id)
             .where("is_deleted", "=", 0);
 
         if (!fetchAdmin.length)
             throw ApiError.badRequest("Admin does not exists!");
-        
-        const deleteAdmin = await Admin.query()
+
+        await Admin.query()
             .findById(id)
             .patch({
                 is_deleted: true
@@ -142,9 +145,10 @@ class AdminService {
             throw ApiError.notAuthorized("Invalid password!");
 
         const admin = {
+            id: fetchAdmin[0].id,
             name: fetchAdmin[0].name,
             email: fetchAdmin[0].email,
-            mobile: fetchAdmin[0].mobile,
+            campaign_id: fetchAdmin[0].campaign_id,
         }
 
         return admin;

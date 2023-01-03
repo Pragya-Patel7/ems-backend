@@ -21,8 +21,9 @@ class Admin extends Model {
             properties: {
                 name: { type: "string", minLength: 1, maxLength: 255 },
                 email: { type: "string" },
-                mobile: { type: "string" },
                 password: { type: "string" },
+                status: { type: "boolean" },
+                campaign_id: { type: "string" },
                 is_deleted: { type: "boolean" },
             }
         }
