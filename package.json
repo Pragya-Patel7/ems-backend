@@ -1,0 +1,36 @@
+{
+  "name": "engagementmanagementsystem",
+  "version": "1.0.0",
+  "description": "Engagement Management System",
+  "main": "server.js",
+  "scripts": {
+    "migrate": "knex migrate:latest",
+    "seed": "knex seed:run",
+    "start": "npm run migrate  && npm run seed && nodemon server.js",
+    "test": "jest --watchAll --testTimeout=10000  --maxWorkers=1 --detectOpenHandles"
+  },
+  "author": "Rahul Yadav",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.1.0",
+    "config": "^3.3.8",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "fs": "^0.0.1-security",
+    "jsonwebtoken": "^9.0.0",
+    "knex": "^2.3.0",
+    "lodash": "^4.17.21",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "mysql": "^2.18.1",
+    "mysql2": "^2.3.3",
+    "objection": "^3.0.1",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "jest": "^29.3.1",
+    "nodemon": "^2.0.20",
+    "supertest": "^6.3.3"
+  }
+}
