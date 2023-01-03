@@ -21,17 +21,6 @@ exports.up = async function (knex) {
         table.boolean("is_deleted");
     })
 
-    await knex.schema.createTable("campaign_login", (table) => {
-        table.uuid("id").primary();
-        table.string("name");
-        table.string("email");
-        table.string("password");
-        table.boolean("status");
-        table.timestamp("created_at").defaultTo(knex.fn.now());
-        table.timestamp("modified_at").defaultTo(knex.fn.now());
-        table.boolean("is_deleted");
-    })
-
     await knex.schema.createTable("user_polls", (table) => {
         table.uuid("id").primary();
         table.uuid("user_id");
