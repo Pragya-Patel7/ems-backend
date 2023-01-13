@@ -28,11 +28,11 @@ class AdminService {
 
     async getById(id) {
         const admin = await Admin.query()
-            .select("*")
-            .where("id", "=", id)
+            .findOne({ id: id })
             .where("is_deleted", "=", 0);
 
-        if (!admin.length)
+        // console.log("object", admin);
+        if (!admin)
             throw ApiError.notFound("Admin does not exists!");
 
         const shortAdmin = {
@@ -63,7 +63,7 @@ class AdminService {
             email: data.email,
             password: hashedPassword,
             campaign_id: data.campaign_id,
-            status: data.campaign_id,
+            status: data.status,
             is_deleted: false,
         });
 
@@ -82,15 +82,28 @@ class AdminService {
         if ("is_deleted" in data)
             throw ApiError.notAuthorized("Cannot re-active the deleted account");
 
-        if ("password" in data)
-            throw ApiError.notAuthorized("Cannot change password here...");
-
         const fetchAdmin = await Admin.query()
-            .findById(id)
+            .findOne({id: id})
             .where("is_deleted", "=", 0);
 
         if (!fetchAdmin)
             throw ApiError.badRequest("Admin does not exists!");
+
+        if ("current_password" in data) {
+            // Verify old password:
+            const verifyPassword = await bcrypt.compare(data.current_password, fetchAdmin.password);
+            if (!verifyPassword)
+                throw ApiError.notAuthorized("Invalid password!");
+
+            // Create new password:
+            const salt = await bcrypt.genSalt();
+            const hashedPassword = await bcrypt.hash(data.new_password, salt);
+            data.password = hashedPassword;
+
+            // Delete current password from receiving data from body:
+            delete data.current_password;
+            delete data.new_password;
+        }
 
         const fetchedAdminUpdate = await Admin.query().patchAndFetchById(id, data);
         if (!fetchedAdminUpdate)
@@ -115,7 +128,8 @@ class AdminService {
             .findById(id)
             .where("is_deleted", "=", 0);
 
-        if (!fetchAdmin.length)
+        console.log("admin",fetchAdmin);
+        if (!fetchAdmin)
             throw ApiError.badRequest("Admin does not exists!");
 
         await Admin.query()
@@ -137,10 +151,10 @@ class AdminService {
             .where("email", "=", email)
             .where("is_deleted", "=", 0);
 
-        if (!fetchAdmin)
+        if (!fetchAdmin.length)
             throw ApiError.notFound("Admin not found!");
 
-        const verifyPassword = bcrypt.compare(password, fetchAdmin[0].password);
+        const verifyPassword = await bcrypt.compare(password, fetchAdmin[0].password);
         if (!verifyPassword)
             throw ApiError.notAuthorized("Invalid password!");
 

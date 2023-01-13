@@ -20,6 +20,7 @@ class Category extends Model {
             required: ["name"],
             properties: {
                 name: { type: "string", minLength: 1, maxLength: 255 },
+                status: { type: "boolean", default: true },
                 is_deleted: { type: "boolean", default: false }
             }
         }

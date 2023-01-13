@@ -4,9 +4,6 @@ const bcrypt = require("bcrypt");
 const user1 = uuidv4();
 const user2 = uuidv4();
 
-const campaign1 = uuidv4();
-const campaign2 = uuidv4();
-
 const user_polls1 = uuidv4();
 const user_polls2 = uuidv4();
 
@@ -25,6 +22,14 @@ const option2 = uuidv4();
 const category_id1 = uuidv4();
 const category_id2 = uuidv4();
 
+const campaign_id1 = uuidv4();
+const campaign_id2 = uuidv4();
+
+const poll_duration1 = uuidv4();
+const poll_duration2 = uuidv4();
+const poll_duration3 = uuidv4();
+const poll_duration4 = uuidv4();
+
 exports.seed = (knex) => {
   // Delete all existing entries:
   return knex("admins")
@@ -41,7 +46,7 @@ exports.seed = (knex) => {
           name: "Rahul",
           email: "rahul@gmail.com",
           password: `${await password("admin")}`,
-          campaign_id: "9318462049616163e1-b5eb-41d1-80cb-b6cc92318e3b",
+          campaign_id: "b5eb-41d1-80cb-b6cc92318e3b",
           status: true,
           created_at: "2022-12-28",
           modified_at: "2022-12-28",
@@ -52,7 +57,7 @@ exports.seed = (knex) => {
           name: "Yadav",
           email: "yadav@gmail.com",
           password: `${await password("admin")}`,
-          campaign_id: "9318462049616163e1-b5eb-41d1-80cb-b6cc92318e3b",
+          campaign_id: "b5eb-41d1-80cb-b6cc92318e3b",
           status: true,
           created_at: "2022-12-28",
           modified_at: "2022-12-28",
@@ -65,6 +70,7 @@ exports.seed = (knex) => {
         {
           id: user_polls1,
           user_id: user1,
+          poll_id: activity_poll1,
           Option_id: poll_option1,
           created_at: "2022-12-29",
           modified_at: "2022-12-29",
@@ -73,6 +79,7 @@ exports.seed = (knex) => {
         {
           id: user_polls2,
           user_id: user2,
+          poll_id: activity_poll1,
           Option_id: poll_option2,
           created_at: "2022-12-29",
           modified_at: "2022-12-29",
@@ -85,18 +92,18 @@ exports.seed = (knex) => {
         {
           id: activity1,
           name: "Poll activity",
-          status: 1,
+          status: true,
           created_at: "2022-12-29",
           modified_at: "2022-12-29",
-          is_deleted: 0,
+          is_deleted: false,
         },
         {
           id: activity2,
           name: "Loco Play",
-          status: 1,
+          status: true,
           created_at: "2022-12-29",
           modified_at: "2022-12-29",
-          is_deleted: 0,
+          is_deleted: false,
         },
       ]);
     })
@@ -108,14 +115,15 @@ exports.seed = (knex) => {
           question: "Who built this code?",
           coin: 4,
           start_date: "2023-01-01",
-          status: 1,
+          duration: String(poll_duration4),
+          status: true,
           category_id: category_id1,
-          campaign_id: campaign1,
+          campaign_id: campaign_id1,
           poll_name: "Poll 1",
           image: "/image.jpg",
           created_at: "2022-12-29",
           modified_at: "2022-12-29",
-          is_deleted: 0,
+          is_deleted: false,
         },
         {
           id: activity_poll2,
@@ -123,14 +131,16 @@ exports.seed = (knex) => {
           question: "Who is Godfather?",
           coin: 4,
           start_date: "2023-01-01",
-          status: 1,
+          yearly: true,
+          duration: String(poll_duration1),
+          status: true,
           category_id: category_id2,
-          campaign_id: campaign2,
+          campaign_id: campaign_id2,
           poll_name: "Poll 2",
-          image: "/image2.jpg",
+          image: null,
           created_at: "2022-12-29",
           modified_at: "2022-12-29",
-          is_deleted: 0,
+          is_deleted: false,
         },
       ]);
     })
@@ -138,21 +148,21 @@ exports.seed = (knex) => {
       return knex("poll_option").insert([
         {
           id: option1,
-          poll_id: user_polls1,
+          poll_id: activity_poll1,
           option: "Rahul Yadav",
-          option_image: "/image.jpg",
+          option_image: null,
           created_at: "2022-12-29",
           modified_at: "2022-12-29",
-          is_deleted: 0,
+          is_deleted: false,
         },
         {
           id: option2,
-          poll_id: user_polls2,
+          poll_id: activity_poll2,
           option: "Rahul Yadav",
-          option_image: "/image2.jpg",
+          option_image: null,
           created_at: "2022-12-29",
           modified_at: "2022-12-29",
-          is_deleted: 0,
+          is_deleted: false,
         },
       ]);
     })
@@ -160,19 +170,55 @@ exports.seed = (knex) => {
       return knex("categories").insert([
         {
           id: category_id1,
-          name: "Quiz",
-          poll_id: activity_poll1,
+          name: "Sports",
           created_at: "2022-12-29",
           modified_at: "2022-12-29",
-          is_deleted: 0,
+          status: true,
+          is_deleted: false,
         },
         {
           id: category_id2,
-          name: "Quiz",
-          poll_id: activity_poll2,
+          name: "Technology",
           created_at: "2022-12-29",
           modified_at: "2022-12-29",
-          is_deleted: 0,
+          status: true,
+          is_deleted: false,
+        },
+      ]);
+    })
+    .then(() => {
+      return knex("poll_duration").insert([
+        {
+          id: poll_duration1,
+          duration: "Yearly",
+          created_at: "2022-12-29",
+          modified_at: "2022-12-29",
+          status: true,
+          is_deleted: false,
+        },
+        {
+          id: poll_duration2,
+          duration: "Monthly",
+          created_at: "2022-12-29",
+          modified_at: "2022-12-29",
+          status: true,
+          is_deleted: false,
+        },
+        {
+          id: poll_duration3,
+          duration: "Weekly",
+          created_at: "2022-12-29",
+          modified_at: "2022-12-29",
+          status: true,
+          is_deleted: false,
+        },
+        {
+          id: poll_duration4,
+          duration: "Daily",
+          created_at: "2022-12-29",
+          modified_at: "2022-12-29",
+          status: true,
+          is_deleted: false,
         },
       ]);
     })

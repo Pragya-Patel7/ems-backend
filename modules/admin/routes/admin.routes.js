@@ -7,7 +7,7 @@ router.get("/", getAdmins);
 router.get("/:id", auth, getAdminById);
 router.post("/", createAdmin);
 router.patch("/:id", auth, updateAdmin);
-router.delete("/:id", auth, deleteAdmin);
+router.delete("/:id", deleteAdmin);
 router.post("/login", adminLogin);
 
 module.exports = router;
