@@ -1,8 +1,8 @@
 const { Model } = require("objection");
 
-class Admin extends Model {
-    static get tableName() {
-        return "admins";
+class PollDuration extends Model {
+    static tableName() {
+        return "poll_duration";
     }
 
     $beforeInsert() {
@@ -14,20 +14,17 @@ class Admin extends Model {
         this.modified_at = new Date();
     }
 
-    static get jsonSchema() {
+    static jsonSchema() {
         return {
             type: "object",
-            required: ["name", "email"],
+            required: ["duration"],
             properties: {
-                name: { type: "string", minLength: 1, maxLength: 255 },
-                email: { type: "string" },
-                password: { type: "string" },
+                duration: { type: "string" },
                 status: { type: "boolean", default: true },
-                campaign_id: { type: "string" },
                 is_deleted: { type: "boolean", default: false },
             }
         }
     }
-}
+};
 
-module.exports = Admin;
+module.exports = PollDuration;

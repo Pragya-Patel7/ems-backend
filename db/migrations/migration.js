@@ -1,7 +1,6 @@
 exports.down = function (knex) {
     return knex.schema
         .dropTableIfExists("admins")
-        .dropTableIfExists("campaign_login")
         .dropTableIfExists("user_polls")
         .dropTableIfExists("activity")
         .dropTableIfExists("activity_poll")
@@ -14,8 +13,9 @@ exports.up = async function (knex) {
         table.uuid("id").primary();
         table.string("name");
         table.string("email");
-        table.string("mobile");
+        table.uuid("campaign_id");
         table.string("password");
+        table.boolean("status");
         table.timestamp("created_at").defaultTo(knex.fn.now());
         table.timestamp("modified_at").defaultTo(knex.fn.now());
         table.boolean("is_deleted");
@@ -24,6 +24,7 @@ exports.up = async function (knex) {
     await knex.schema.createTable("user_polls", (table) => {
         table.uuid("id").primary();
         table.uuid("user_id");
+        table.uuid("poll_id");
         table.uuid("option_id");
         table.timestamp("created_at").defaultTo(knex.fn.now());
         table.timestamp("modified_at").defaultTo(knex.fn.now());
@@ -45,11 +46,12 @@ exports.up = async function (knex) {
         table.string("question");
         table.integer("coin");
         table.timestamp("start_date").defaultTo(knex.fn.now());
-        table.boolean("status");
         table.uuid("category_id");
         table.uuid("campaign_id");
         table.string("poll_name");
         table.string("image");
+        table.string("duration");
+        table.boolean("status");
         table.timestamp("created_at").defaultTo(knex.fn.now());
         table.timestamp("modified_at").defaultTo(knex.fn.now());
         table.boolean("is_deleted");
@@ -68,10 +70,20 @@ exports.up = async function (knex) {
     await knex.schema.createTable("categories", (table) => {
         table.uuid("id").primary();
         table.string("name");
-        table.uuid("poll_id");
         table.timestamp("created_at").defaultTo(knex.fn.now());
         table.timestamp("modified_at").defaultTo(knex.fn.now());
+        table.boolean("status");
         table.boolean("is_deleted");
     })
+
+    await knex.schema.createTable("poll_duration", (table) => {
+        table.uuid("id").primary();
+        table.string("duration");
+        table.timestamp("created_at").defaultTo(knex.fn.now());
+        table.timestamp("modified_at").defaultTo(knex.fn.now());
+        table.boolean("status");
+        table.boolean("is_deleted");
+    })
+
     return true;
 };

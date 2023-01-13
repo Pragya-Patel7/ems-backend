@@ -1,8 +1,8 @@
 const { Model } = require("objection");
 
-class Activity extends Model {
+class PollOptions extends Model {
     static get tableName() {
-        return "activity";
+        return "poll_option";
     }
 
     $beforeInsert() {
@@ -17,14 +17,15 @@ class Activity extends Model {
     static get jsonSchema() {
         return {
             type: "object",
-            required: ["name", "status"],
+            required: ["option"],
             properties: {
-                name: { type: "string", minLength: 1, maxLength: 255 },
-                status: { type: "boolean", default: true },
-                is_deleted: { type: "boolean", default: false }
+                option: { type: ["string", "null"], minLength: 1, maxLength: 255 },
+                option_image: { type: ["string", "null"] },
+                poll_id: { type: "string" },
+                is_deleted:{type: "boolean", default: false},
             }
         }
     }
 }
 
-module.exports = Activity;
+module.exports = PollOptions;

@@ -17,8 +17,11 @@ const getAdmins = async (req, res) => {
 }
 
 const getAdminById = async (req, res) => {
+    console.log("user", req.user);
     const id = req.params.id;
     if (!id) throw ApiError.badRequest("Id is required!");
+    if (id !== req.user.id)
+        return Response.error(res, ApiError.notAuthorized("Unauthorized user!"));
     try {
         const result = await AdminService.getById(id);
 
@@ -70,7 +73,7 @@ const deleteAdmin = async (req, res) => {
     try {
         const deleteAdmin = await AdminService.deleteAdmin(id);
 
-        return Response.success(res, "Admin deleted successfully!", deleteAdmin);
+        return Response.success(res, "Admin deleted successfully!", null);
     } catch (err) {
         if (err instanceof ApiError)
             return Response.error(res, err);
