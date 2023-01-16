@@ -131,7 +131,6 @@ exports.seed = (knex) => {
           question: "Who is Godfather?",
           coin: 4,
           start_date: "2023-01-01",
-          yearly: true,
           duration: String(poll_duration1),
           status: true,
           category_id: category_id2,

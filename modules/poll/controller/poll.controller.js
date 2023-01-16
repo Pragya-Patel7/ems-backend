@@ -90,10 +90,12 @@ const updatePoll = async (req, res) => {
                 options.push(files[key][0].path)
         }
 
-        const pollOptions = {
-            optionName: data.option_name,
-            optionImage: options
-        }
+        const pollOptions = {};
+        if (options.length)
+            pollOptions.optoinImage = options;
+
+        if (data.option_name)
+            pollOptions.optionName = data.option_name;
 
         const updatedPoll = await PollService.updatePoll(data, pollOptions);
 
@@ -129,11 +131,9 @@ const getYearlyPoll = async (req, res) => {
     
     category_id = category_id.replace(/['"]+/g, '');
     try {
-        const category = await CategoriesService.getById(category_id);
-        const { yearly_poll_id } = category;
-        const getYearlyPoll = await PollService.getOne(yearly_poll_id);
+        const getYearlyPoll = await PollService.getYearlyPoll(category_id);
 
-        return Response.success(res, "Yearly found successfully!", getYearlyPoll);
+        return Response.success(res, "Yearly poll found successfully!", getYearlyPoll);
     } catch (err) {
         if (err instanceof ApiError)
             return Response.error(res, err);

@@ -9,7 +9,7 @@ const PollDurationServices = require("../../poll_duration/services/poll_duration
 class PollService {
     async getPollDurations(pollArr) {
         let polls = [];
-        for await(const poll of pollArr) {
+        for await (const poll of pollArr) {
             const id = poll.duration;
             poll.duration = await PollDurationServices.getOne(id);
             polls.push(poll);
@@ -20,7 +20,7 @@ class PollService {
     async getAll() {
         const polls = await Poll.query().where("is_deleted", "=", 0).withGraphFetched({ category: true, poll_option: true });
         const allPolls = await this.getPollDurations(polls);
-    
+
         return allPolls;
     }
 
@@ -41,26 +41,46 @@ class PollService {
         return poll;
     }
 
+    async getYearlyPoll(category_id) {
+        const polls = await Poll.query()
+            .where("category_id", "=", category_id)
+            .where("is_deleted", "=", 0);
+
+        for await (const poll of polls) {
+            poll.duration = await PollDurationServices.getOne(poll.duration);
+        }
+
+        return polls;
+    }
+
+
     async newPoll(data, options) {
         data.id = uuidv4();
         data.yearly = Boolean(data.yearly);
-    
+
         const duration = await PollDurationServices.getAll();
         let dailyDurationId;
         let yearlyDurationId;
-        duration.map(dur => {
+        for await(let dur of duration){
             if (dur.duration == "Daily")
                 dailyDurationId = dur.id;
-            
-            if (dur.duration == "Yearly")
-                yearlyDurationId = dur.id;            
-        })
+
+            if (dur.duration == "Yearly") {
+                const category_id = data.category_id;
+                const fetchYearlyPoll = await this.getYearlyPoll(category_id);
+                if (fetchYearlyPoll.length)
+                    throw ApiError.alreadyExists("Yearly poll already exists in this category");
+                
+                yearlyDurationId = dur.id;
+            }
+        }
 
         if (data.yearly)
             data.duration = yearlyDurationId;
         else
             data.duration = dailyDurationId;
 
+        delete data.yearly;
         const newPoll = await Poll.query().insert(data);
 
         const insertOptions = await PollOptionsService.newOptions(newPoll.id, options);
@@ -84,7 +104,10 @@ class PollService {
             .findById(id)
             .patch(data);
 
-        await PollOptionsService.updateOptions(id, options);
+        const optionsLength = Object.keys(options).length;
+        if (optionsLength)
+            await PollOptionsService.updateOptions(id, options);
+
         const updatedPoll = await this.getOne(id);
 
         return updatedPoll;
