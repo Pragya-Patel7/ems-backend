@@ -17,9 +17,10 @@ class Activity extends Model {
     static get jsonSchema() {
         return {
             type: "object",
-            required: ["name", "status"],
+            required: ["name", "coin_value", "status"],
             properties: {
                 name: { type: "string", minLength: 1, maxLength: 255 },
+                coin_value: { type: "integer" },
                 status: { type: "boolean", default: true },
                 is_deleted: { type: "boolean", default: false }
             }

@@ -1,5 +1,16 @@
 const upload = require("../../../middlewares/multer");
-const { createPoll, getPolls, getPollById, deletePoll, updatePoll, getYearlyPoll } = require("../controller/poll.controller");
+const {
+    createPoll,
+    getPolls,
+    getPollById,
+    deletePoll,
+    updatePoll,
+    getYearlyPoll,
+    getPollOfTheDay,
+    getPreviousPolls,
+    getPollByDuration
+} = require("../controller/poll.controller");
+const auth = require("../../../middlewares/auth");
 
 let router = require("express").Router();
 
@@ -50,13 +61,16 @@ const multipleImages = [
     },
 ];
 
-router.get("/", getPolls);
-router.post("/", upload.fields(multipleImages), createPoll);
+router.get("/", auth, getPolls);
+router.post("/", auth, upload.fields(multipleImages), createPoll);
 
-router.get("/yearly", getYearlyPoll);
-router.get("/:id", getPollById);
-router.patch("/:id", upload.fields(multipleImages), updatePoll);
-router.delete("/:id", deletePoll);
+router.get("/yearly", auth, getYearlyPoll);
+router.get("/potd", auth, getPollOfTheDay);
+router.get("/duration", getPollByDuration);
+router.get("/previous/:category_id", auth, getPreviousPolls);
+router.get("/:id", auth, getPollById);
+router.patch("/:id", auth, upload.fields(multipleImages), updatePoll);
+router.delete("/:id", auth, deletePoll);
 
 
 module.exports = router;

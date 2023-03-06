@@ -16,12 +16,13 @@ const userPollRouter = require("./modules/user_polls/routes/user_polls.routes");
 function router(app) {
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
-    
+
     app.use(`/${ENDPOINT}/${VERSION}/admins`, adminRouter);
     app.use(`/${ENDPOINT}/${VERSION}/activity`, activityRouter);
     app.use(`/${ENDPOINT}/${VERSION}/categories`, categoryRouter);
-    app.use(`/${ENDPOINT}/${VERSION}/polls`, pollsRouter);
+    
     app.use(`/${ENDPOINT}/${VERSION}/polls/user`, userPollRouter);
+    app.use(`/${ENDPOINT}/${VERSION}/polls`, pollsRouter);
 }
 
 // Initializing routes:

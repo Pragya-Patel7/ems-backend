@@ -26,12 +26,4 @@ module.exports = {
     },
     debug: true
   },
-
 };
-
-
-/**
- "migrate": "knex migrate:latest",
-    "seed": "knex seed:run",
-    "startms": "npm run migrate  && npm run seed && nodemon server.js",
- */

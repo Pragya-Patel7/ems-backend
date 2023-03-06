@@ -21,6 +21,6 @@ const connect = () => {
 if (process.env.NODE_ENV !== "test") {
     app.listen(PORT, () => {
         connect();
-        console.log(`cms server is running on port ${PORT}`);
+        console.log(`EMS server is running on port ${PORT}`);
     })
 }
