@@ -21,8 +21,8 @@ function router(app) {
     app.use(`/${ENDPOINT}/${VERSION}/activity`, activityRouter);
     app.use(`/${ENDPOINT}/${VERSION}/categories`, categoryRouter);
     
+    app.use(`/${ENDPOINT}/${VERSION}/polls/user`, userPollRouter);
     app.use(`/${ENDPOINT}/${VERSION}/polls`, pollsRouter);
-    app.use(`/${ENDPOINT}/${VERSION}/user_polls`, userPollRouter);
 }
 
 // Initializing routes:

@@ -5,8 +5,10 @@ const PollOptionsService = require("../../poll_options/services/poll_options.ser
 const CategoriesService = require("../../categories/services/categories.service");
 
 const getPolls = async (req, res) => {
+    console.log("USer", req.user);
+    const { campaign_id } = req.user;
     try {
-        const result = await PollService.getAll();
+        const result = await PollService.getByCampaignId(campaign_id);
 
         return Response.success(res, "Poll found successfully!", result);
     } catch (err) {
@@ -36,14 +38,18 @@ const getPollById = async (req, res) => {
 }
 
 const createPoll = async (req, res) => {
+    const loggedUser = req.user;
+    console.log(">>>", loggedUser);
     const data = req.body;
     const dataLength = Object.keys(data).length
     if (!dataLength) return Response.error(res, ApiError.badRequest("Details are required to create a new poll"));
 
+    if (!data.option_name || !data.option_name.length)
+        return Response.error(res, ApiError.badRequest("Poll options are required"));
+
     if (req.files.question)
         data.image = req.files.question[0].path;
 
-    data.coin = parseInt(data.coin);
     try {
         let options = [];
         const files = req.files;
@@ -58,6 +64,9 @@ const createPoll = async (req, res) => {
         }
 
         delete data.option_name;
+        data.campaign_id = loggedUser.campaign_id;
+        data.created_by = loggedUser.id;
+        data.modified_by = loggedUser.id;
 
         const result = await PollService.newPoll(data, pollOptions);
 
@@ -125,10 +134,10 @@ const deletePoll = async (req, res) => {
 
 const getYearlyPoll = async (req, res) => {
     let category_id = req.query.category;
-    
+
     if (!category_id)
         return Response.error(res, ApiError.badRequest("Category id is required"));
-    
+
     category_id = category_id.replace(/['"]+/g, '');
     try {
         const getYearlyPoll = await PollService.getYearlyPoll(category_id);
@@ -137,7 +146,60 @@ const getYearlyPoll = async (req, res) => {
     } catch (err) {
         if (err instanceof ApiError)
             return Response.error(res, err);
-        
+
+        return Response.error(res, ApiError.internal(err));
+    }
+}
+
+const getPollOfTheDay = async (req, res) => {
+    let category_id = req.query.category;
+
+    if (category_id)
+        category_id = category_id.replace(/['"]+/g, '');
+
+    let campaign_id = req.query.campaign;
+    if (!campaign_id)
+        return Response.error(res, ApiError.badRequest("Campaign id is required"));
+
+    campaign_id = campaign_id.replace(/['"]+/g, '');
+    try {
+        const pollOfTheDay = await PollService.getPollOfTheDay(category_id, campaign_id);
+
+        return Response.success(res, "Poll of the Day found successfully!", pollOfTheDay);
+    } catch (err) {
+        if (err instanceof ApiError)
+            return Response.error(res, err);
+
+        return Response.error(res, ApiError.internal(err));
+    }
+}
+
+const getPollByDuration = async (req, res) => {
+    const campaign_id = req.query.campaign_id.replace(/['"]+/g, '');;
+    const duration = req.query.duration.replace(/['"]+/g, '');;
+    if (!campaign_id || !duration)
+        throw ApiError.badRequest("Missing campaign id or duration");
+    try {
+        const poll = await PollService.pollByDuration(campaign_id, duration);
+        return Response.success(res, `${duration} poll found successfully!`, poll[0]);
+    } catch (err) {
+        if (err instanceof ApiError)
+            return Response.error(res, err);
+
+        return Response.error(res, ApiError.internal(err));        
+    }
+}
+
+const getPreviousPolls = async (req, res) => {
+    const category_id = req.params.category_id;
+    try {
+        const result = await PollService.previousPolls(category_id);
+
+        return Response.success(res, "Previous polls found successfully!", result);
+    } catch (err) {
+        if (err instanceof ApiError)
+            return Response.error(res, err);
+
         return Response.error(res, ApiError.internal(err));
     }
 }
@@ -149,4 +211,7 @@ module.exports = {
     updatePoll,
     deletePoll,
     getYearlyPoll,
+    getPollOfTheDay,
+    getPreviousPolls,
+    getPollByDuration,
 }

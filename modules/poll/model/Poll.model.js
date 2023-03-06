@@ -1,4 +1,5 @@
 const { Model } = require("objection");
+const TimeUtils = require("../../../utils/timeUtils");
 
 class Poll extends Model {
     static get tableName() {
@@ -6,12 +7,12 @@ class Poll extends Model {
     }
 
     $beforeInsert() {
-        this.created_at = new Date();
-        this.modified_at = new Date();
+        this.created_at = TimeUtils.date();
+        this.modified_at = TimeUtils.date();
     }
 
     $beforeUpdate() {
-        this.modified_at = new Date();
+        this.modified_at = TimeUtils.date();
     }
 
     static get jsonSchema() {
@@ -20,14 +21,17 @@ class Poll extends Model {
             required: ["question", "poll_name", "start_date"],
             properties: {
                 activity_id: { type: "string" },
-                question: { type: "string" },
-                coin: { type: "number" },
                 poll_name: { type: "string" },
-                image: { type: ["string", "null"] },
-                start_date: { type: "string" },
-                duration: {type: "string"},
                 category_id: { type: "string" },
                 campaign_id: { type: "string" },
+                campaign_name: { type: "string" },
+                question: { type: "string" },
+                duration_id: { type: "string" },
+                image: { type: ["string", "null"] },
+                start_date: { type: "string" },
+                end_date: { type: "string" },
+                created_by: { type: "string" },
+                modified_by: { type: "string" },
                 status: { type: "boolean", default: true },
                 is_deleted: { type: "boolean", default: false }
             }
@@ -37,6 +41,7 @@ class Poll extends Model {
     static get relationMappings() {
         const Category = require("../../categories/model/Category.model");
         const PollOptions = require("../../poll_options/model/Poll_Option.model");
+        const Activity = require("../../activity/model/Activity.model");
 
         return {
             category: {
@@ -54,6 +59,15 @@ class Poll extends Model {
                 join: {
                     from: "activity_poll.id",
                     to: "poll_option.poll_id"
+                }
+            },
+
+            activity: {
+                relation: Model.BelongsToOneRelation,
+                modelClass: Activity,
+                join: {
+                    from: "activity_poll.activity_id",
+                    to: "activity.id"
                 }
             }
         }

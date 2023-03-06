@@ -25,7 +25,7 @@ const addNewUserPoll = async (req, res) => {
     } catch (err) {
         if (err instanceof ApiError)
             return Response.error(res, err);
-    
+
         return Response.error(res, ApiError.internal(err));
     }
 }
@@ -39,7 +39,7 @@ const getUserPollResult = async (req, res) => {
     } catch (err) {
         if (err instanceof ApiError)
             return Response.error(res, err);
-        
+
         return Response.error(res, ApiError.internal(err));
     }
 }
@@ -55,8 +55,34 @@ const rollbackUserPoll = async (req, res) => {
     } catch (err) {
         if (err instanceof ApiError)
             return Response.error(res, err);
-        
+
         return Response.error(res, ApiError.internal(err));
+    }
+}
+
+const userTodaysPolls = async (req, res) => {
+    const user_id = req.params.user_id;
+    try {
+        const polls = await UserPollsService.todayPolls(user_id);
+        return Response.success(res, "Polls found", polls);
+    } catch (err) {
+        if (err instanceof ApiError)
+            return Response.error(res, err);
+
+        return Response.error(res, ApiError.internal(err))
+    }
+}
+
+const userResponse = async (req, res) => {
+    const data = req.body;
+    try {
+        const response = await UserPollsService.result(data);
+        return Response.success(res, "User responed and found poll results successfully!", response);
+    } catch (err) {
+        if (err instanceof ApiError)
+            return Response.error(res, err);
+
+        return Response.error(res, ApiError.internal(err))
     }
 }
 
@@ -65,4 +91,6 @@ module.exports = {
     addNewUserPoll,
     getUserPollResult,
     rollbackUserPoll,
+    userTodaysPolls,
+    userResponse
 }
