@@ -20,7 +20,8 @@ class TimeUtils {
     }
 
     static nextDay() {
-        const date = new Date(finalDate.getTime() + 86400000 + offset).toISOString().slice(0, 10);
+        let date = new Date(finalDate.getTime() + 86400000 + offset).toISOString().slice(0, 10);
+        date = date + " 00:00:01";
         return date;
     }
 }

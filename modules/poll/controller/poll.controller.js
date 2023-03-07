@@ -5,8 +5,9 @@ const PollOptionsService = require("../../poll_options/services/poll_options.ser
 const CategoriesService = require("../../categories/services/categories.service");
 
 const getPolls = async (req, res) => {
-    console.log("USer", req.user);
-    const { campaign_id } = req.user;
+    // console.log("USer", req.user);
+    // const { campaign_id } = req.user;
+    const campaign_id = req.params.campaign_id;
     try {
         const result = await PollService.getByCampaignId(campaign_id);
 
@@ -175,14 +176,15 @@ const getPollOfTheDay = async (req, res) => {
 }
 
 const getPollByDuration = async (req, res) => {
-    const campaign_id = req.query.campaign_id.replace(/['"]+/g, '');;
-    const duration = req.query.duration.replace(/['"]+/g, '');;
+    const campaign_id = req.query.campaign_id?.replace(/['"]+/g, '');;
+    const duration = req.query.duration?.toLowerCase()?.replace(/['"]+/g, '');;
     if (!campaign_id || !duration)
         throw ApiError.badRequest("Missing campaign id or duration");
     try {
         const poll = await PollService.pollByDuration(campaign_id, duration);
-        return Response.success(res, `${duration} poll found successfully!`, poll[0]);
+        return Response.success(res, `${duration} poll found successfully!`, poll);
     } catch (err) {
+        console.log(err);
         if (err instanceof ApiError)
             return Response.error(res, err);
 

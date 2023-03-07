@@ -38,12 +38,12 @@ class PollService {
         const polls = await Poll.query()
             .where("campaign_id", "=", campaign_id)
             .where("is_deleted", "=", 0)
-            .withGraphFetched({ category: true, poll_option: true });
+            .withGraphFetched({ category: true, poll_option: true, activity: true });
 
-        console.log("Polls", polls);
-        const allPolls = await this.getPollDurations(polls);
+        // console.log("Polls", polls);
+        // const allPolls = await this.getPollDurations(polls);
 
-        return allPolls;
+        return polls;
     }
 
     async getOne(id) {
@@ -119,10 +119,10 @@ class PollService {
         data.id = uuidv4();
         // validation in body: activity_id, poll_name, campaign_id, campaign_name, question, duration_id, start_date
 
-        console.log("Data", data);
+        // console.log("Data", data);
         // If daily, set end date:
         if (data.duration_id === "1") {
-            data.end_date = (data.start_date + 60 * 60 * 24 * 1000)
+            data.end_date = TimeUtils.nextDay();
         }
 
         // If yearly, set end date:
@@ -273,33 +273,54 @@ class PollService {
         return result;
     }
 
-    async pollByDuration(campaign_id, duration) {
-        const durationId = await PollDurationServices.findDurationId(duration);
-        // console.log("duration", durationId);
+    async pollByDuration(campaign_id, duration_name) {
+        const duration = await PollDurationServices.findDurationId(duration_name);
+        console.log("Duration", duration);
+        if (!duration.length)
+            throw ApiError.notFound("Incorrect duration format");
+
+        const duration_id = duration[0].id;
         const start_date = TimeUtils.getDate();
         let end_date;
 
-        if (duration === "daily")
-            end_date = TimeUtils.nextDay()
+        // Switch case:
+        // switch (duration_id) {
+        //     case 1:
+        //         const end_date = TimeUtils.nextDay()
 
-        console.log("Start", start_date);
-        console.log("End", end_date);
+        //         console.log("End", end_date);
+        //         let poll = await Poll.query().toLowerCase()
+        //             .where("campaign_id", "=", campaign_id)
+        //             .where("duration_id", "=", duration[0]?.id)
+        //             .where(duration => duration.where("start_date", "=", start_date).orWhere("start_date", ">", start_date))
+        //             .where("end_date", "<", end_date)
+        //             .where("status", "=", 1)
+        //             .where("is_deleted", "=", 0)
+        //             .withGraphFetched({ poll_option: true, activity: true })
+
+        //         if (poll.length)
+        //             poll[0].result = await this.getPollResults(poll[0].id);
+        //         return poll;
+        //     default:
+        //         break;
+        // }
+
+        if (duration_name === "daily")
+            end_date = TimeUtils.nextDay()
 
         let poll = await Poll.query()
             .where("campaign_id", "=", campaign_id)
-            .where("duration_id", "=", durationId[0].id)
+            .where("duration_id", "=", duration_id)
             .where(duration => duration.where("start_date", "=", start_date).orWhere("start_date", ">", start_date))
             .where("end_date", "<", end_date)
             .where("status", "=", 1)
             .where("is_deleted", "=", 0)
             .withGraphFetched({ poll_option: true, activity: true })
 
-        // console.log("object", poll.id);
-        poll[0].result = await this.getPollResults(poll[0].id);
-        // console.log("<<<<<<<<>>>>>>>", result);
+        console.log("Poll", poll);
+        if (poll.length)
+            poll[0].result = await this.getPollResults(poll[0].id);
         return poll;
-        // console.log("<<<", poll);
-        // return poll
     }
 }
 

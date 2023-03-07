@@ -61,7 +61,7 @@ const multipleImages = [
     },
 ];
 
-router.get("/", auth, getPolls);
+router.get("/:campaign_id", getPolls);  // Removed auth
 router.post("/", auth, upload.fields(multipleImages), createPoll);
 
 router.get("/yearly", auth, getYearlyPoll);
