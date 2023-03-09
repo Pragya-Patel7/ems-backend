@@ -8,7 +8,8 @@ const {
     getYearlyPoll,
     getPollOfTheDay,
     getPreviousPolls,
-    getPollByDuration
+    getPollByDuration,
+    getAllPoles
 } = require("../controller/poll.controller");
 const auth = require("../../../middlewares/auth");
 
@@ -62,14 +63,16 @@ const multipleImages = [
 ];
 
 
-router.get("/yearly", auth, getYearlyPoll);
-router.get("/potd", auth, getPollOfTheDay);
-router.get("/duration", getPollByDuration);
-router.get("/previous/:category_id", auth, getPreviousPolls);
+// router.get("/yearly", auth, getYearlyPoll);
+// router.get("/potd", auth, getPollOfTheDay);
+router.get("/duration", getPollByDuration); // xxxxxxxxxx
+router.get("/campaign/:campaign_id", getPolls);  // Removed auth    // xxxxxxxxxxx
+router.get("/previous/:category_id", auth, getPreviousPolls);   // xxxxxxxxxxxx
 router.get("/:id", auth, getPollById);
 router.patch("/:id", auth, upload.fields(multipleImages), updatePoll);
 router.delete("/:id", auth, deletePoll);
-router.get("/:campaign_id", getPolls);  // Removed auth
 router.post("/", auth, upload.fields(multipleImages), createPoll);
+router.get("/", auth, getAllPoles);   // xxxxxxxxxxxx
+
 
 module.exports = router;

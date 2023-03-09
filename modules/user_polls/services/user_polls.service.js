@@ -137,7 +137,7 @@ class UserPollsServices {
 
     async todayPolls(user_id) {
         const today = TimeUtils.getDate();
-        const nextDay = TimeUtils.nextDay();
+        const nextDay = TimeUtils.nextDayQuery();
 
         const fetchPolls = await UserPolls.query()
             .where("user_id", "=", user_id)

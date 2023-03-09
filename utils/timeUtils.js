@@ -19,7 +19,14 @@ class TimeUtils {
         return date;
     }
 
-    static nextDay() {
+    static nextDay(start_date) {
+        const startDate = new Date(start_date);
+        let date = new Date(startDate.getTime() + 86400000 + offset).toISOString().slice(0, 10);
+        // date = date + " 00:00:00";
+        return date;
+    }
+
+    static nextDayQuery() {
         let date = new Date(finalDate.getTime() + 86400000 + offset).toISOString().slice(0, 10);
         // date = date + " 00:00:01";
         return date;
@@ -29,6 +36,21 @@ class TimeUtils {
         let date = new Date(finalDate.getTime() + 86400000 + offset).toISOString().slice(0, 10);
         date = date + " 00:00:01";
         return date;
+    }
+
+    static setOneYear(start_date) {
+        // console.log(object);
+        const startDate = new Date(start_date);
+        const nextYearDate = startDate.setFullYear(finalDate.getFullYear() + 1);
+        const year = new Date(nextYearDate).toISOString().slice(0, 10);
+        return year;
+    }
+
+    static oneYearQuery() {
+        const nextYearDate = ISTTime.setFullYear(finalDate.getFullYear() + 1);
+        let year = new Date(nextYearDate).toISOString().slice(0, 10);
+        year = year + "00:00:01";
+        return year;
     }
 }
 

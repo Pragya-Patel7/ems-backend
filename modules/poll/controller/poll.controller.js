@@ -4,6 +4,20 @@ const PollService = require("../services/poll.service");
 const PollOptionsService = require("../../poll_options/services/poll_options.services");
 const CategoriesService = require("../../categories/services/categories.service");
 
+const getAllPoles = async (req, res) => {
+    // const campaign_id = req.query.campaign_id;
+    const loggedUser = req.user;
+    try {
+        const polls = await PollService.getAll(loggedUser);
+        return Response.success(res, "All poles found successfully!", polls);
+    } catch (err) {
+        if (err instanceof ApiError)
+            return Response.error(res, err);
+
+        return Response.error(res, ApiError.internal(err));
+    }
+}
+
 const getPolls = async (req, res) => {
     // console.log("USer", req.user);
     // const { campaign_id } = req.user;
@@ -22,12 +36,12 @@ const getPolls = async (req, res) => {
 
 const getPollById = async (req, res) => {
     const id = req.params.id;
-    if (!id) return ApiError.badRequest("Id is required");
+    if (!id) return Response.error(res, ApiError.badRequest("Id is required"));
     try {
         const poll = await PollService.getOne(id);
 
         if (!poll)
-            throw ApiError.notFound("Poll not found");
+            return Response.error(res, ApiError.notFound("Poll not found"));
 
         return Response.success(res, "Poll found successfully!", poll)
     } catch (err) {
@@ -40,13 +54,13 @@ const getPollById = async (req, res) => {
 
 const createPoll = async (req, res) => {
     const loggedUser = req.user;
-    console.log(">>>", loggedUser);
+    // console.log(">>>", loggedUser);
     const data = req.body;
     const dataLength = Object.keys(data).length
     if (!dataLength) return Response.error(res, ApiError.badRequest("Details are required to create a new poll"));
 
-    if (!data.option_name || !data.option_name.length)
-        return Response.error(res, ApiError.badRequest("Poll options are required"));
+    if (data.option_name && data.option_name.length < 4)
+        return Response.error(res, ApiError.badRequest("Poll should have atleast 4 options"));
 
     if (req.files.question)
         data.image = req.files.question[0].path;
@@ -59,6 +73,11 @@ const createPoll = async (req, res) => {
                 options.push(files[key][0].path)
         }
 
+        // Check: only option names or images or no. of names and images equal:
+        if (data.option_name && options.length)
+            if (data.option_name.length !== options.length)
+                return Response.error(res, ApiError.badRequest("Poll options and images length are mismatched"))
+
         const pollOptions = {
             optionName: data.option_name,
             optionImage: options
@@ -66,6 +85,7 @@ const createPoll = async (req, res) => {
 
         delete data.option_name;
         data.campaign_id = loggedUser.campaign_id;
+        data.campaign_name = loggedUser.campaign_name;
         data.created_by = loggedUser.id;
         data.modified_by = loggedUser.id;
 
@@ -82,13 +102,11 @@ const createPoll = async (req, res) => {
 
 const updatePoll = async (req, res) => {
     const id = req.params.id;
-    const data = req.body;
+    let data = req.body;
     const dataLength = Object.keys(data).length
     if (!dataLength) return Response.error(res, ApiError.badRequest("Update data is required"));
 
     data.id = id;
-    if ("coin" in data)
-        data.coin = parseInt(data.coin);
 
     if ("question" in req.files)
         data.image = req.files.question[0].path;
@@ -124,7 +142,7 @@ const deletePoll = async (req, res) => {
     try {
         const deletePoll = await PollService.deletePoll(id);
 
-        return Response.success(res, "Poll deleted successfully!", null);
+        return Response.success(res, "Poll deleted successfully!", true);
     } catch (err) {
         if (err instanceof ApiError)
             return Response.error(res, err);
@@ -176,7 +194,6 @@ const getPollOfTheDay = async (req, res) => {
 }
 
 const getPollByDuration = async (req, res) => {
-	// console.log("Srsly!")
     const campaign_id = req.query.campaign_id?.replace(/['"]+/g, '');;
     const duration = req.query.duration?.toLowerCase()?.replace(/['"]+/g, '');;
     if (!campaign_id || !duration)
@@ -189,7 +206,7 @@ const getPollByDuration = async (req, res) => {
         if (err instanceof ApiError)
             return Response.error(res, err);
 
-        return Response.error(res, ApiError.internal(err));        
+        return Response.error(res, ApiError.internal(err));
     }
 }
 
@@ -208,6 +225,7 @@ const getPreviousPolls = async (req, res) => {
 }
 
 module.exports = {
+    getAllPoles,
     getPolls,
     createPoll,
     getPollById,
@@ -216,5 +234,5 @@ module.exports = {
     getYearlyPoll,
     getPollOfTheDay,
     getPreviousPolls,
-    getPollByDuration,
+    getPollByDuration
 }

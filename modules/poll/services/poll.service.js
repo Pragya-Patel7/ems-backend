@@ -9,6 +9,7 @@ const TimeUtils = require("../../../utils/timeUtils");
 const UserPollsService = require("../../user_polls/services/user_polls.service");
 const PollOptionsServices = require("../../poll_options/services/poll_options.services");
 const UserPolls = require("../../user_polls/model/User_polls.model");
+const setEndDate = require("../../../utils/endDate");
 
 class PollService {
     async getPollDurations(pollArr) {
@@ -21,11 +22,24 @@ class PollService {
         return polls;
     }
 
-    async getAll() {
-        const polls = await Poll.query().where("is_deleted", "=", 0).withGraphFetched({ category: true, poll_option: true });
-        const allPolls = await this.getPollDurations(polls);
+    // async getAll() {
+    //     const polls = await Poll.query().where("is_deleted", "=", 0).withGraphFetched({ category: true, poll_option: true, activity: true });
+    //     // const allPolls = await this.getPollDurations(polls);
 
-        return allPolls;
+    //     return polls;
+    // }
+
+    async getAll(user) {
+        // if campaign is Plutos ONE, show all polls OR show polls based on user's role (Super admin or admin):
+        if (user.campaign_id === 1) {
+            const polls = await Poll.query().where("is_deleted", "=", 0).withGraphFetched({ category: true, poll_option: true, activity: true });
+            return polls;
+        }
+                    
+        // Polls by campaign id:
+        // campaign_id = campaign_id.replace(/['"]+/g, '');
+        const campaignPolls = await this.getByCampaignId(user.campaign_id);
+        return campaignPolls;
     }
 
     async getByCampaignId(campaign_id) {
@@ -47,16 +61,15 @@ class PollService {
     }
 
     async getOne(id) {
-        const poll = await Poll.query()
+        let poll = await Poll.query()
             .findById(id)
             .where("is_deleted", "=", 0)
-            .withGraphFetched({ category: true, poll_option: true });
+            .withGraphFetched({ category: true, poll_option: true, activity: true });
 
-        // const durationId = poll.duration;
-        // const duration = await PollDurationServices.getOne(durationId);
-
-        // poll.duration = duration;
-
+        // Poll result:
+        // console.log(">>>", poll);
+        // const result = await this.getPollResults(id);
+        // console.log(">>>", result);
         return poll;
     }
 
@@ -116,65 +129,25 @@ class PollService {
     }
 
     async newPoll(data, options) {
-        data.id = uuidv4();
-        // validation in body: activity_id, poll_name, campaign_id, campaign_name, question, duration_id, start_date
+        // validation of required data: activity_id, poll_name, campaign_id, campaign_name, question, duration_id, start_date
+        const { activity_id, poll_name, campaign_id, campaign_name, question, duration_id, start_date } = data;
+        if (!activity_id || !poll_name || !campaign_id || /*!campaign_name ||*/ !question || !duration_id || !start_date)
+            throw ApiError.badRequest("Insufficient data to create poll");
 
-        // console.log("Data", data);
-        // If daily, set end date:
-        if (data.duration_id === "1") {
-            data.end_date = TimeUtils.nextDay();
+        data.id = uuidv4();
+        // Set end date to data:
+        data = setEndDate(data);
+
+        // Check if this campaign (except Plutos One) has already Poll of the Day on this date:
+        if (duration_id === "1" && (data.campaign_name !== "Plutos One")) {  // Replace campaign_name with campaign_id
+            const fetchPOTD = await this.fetchCampaignDailyPoll(campaign_id, start_date);
+            if (fetchPOTD)
+                throw ApiError.alreadyExists(`This campaign has already Poll of the Day on this date: ${start_date}`);
         }
 
-        // If yearly, set end date:
+        // Check if yearly poll already exsits:
+        // Code here
 
-
-
-
-        // if (data.yearly === "true")
-        //     data.yearly = true;
-        // else
-        //     data.yearly = false;
-
-        // Finding yearly and daily duration id:
-        // const duration = await PollDurationServices.getAll();
-        // let dailyDurationId;
-        // let yearlyDurationId;
-
-        // for await (let dur of duration) {
-        //     if (dur.duration === "Daily")
-        //         dailyDurationId = dur.id;
-
-        //     if (dur.duration === "Yearly") {
-        //         yearlyDurationId = dur.id;
-        //     }
-        // }
-
-        // // Adding duration in data before creating new poll:
-        // if (data.yearly) {
-        //     const category_id = data.category_id;
-        //     const fetchYearlyPoll = await this.getYearlyPoll(category_id);
-        //     if (fetchYearlyPoll.length)
-        //         throw ApiError.alreadyExists("Yearly poll already exists in this category");
-
-        //     data.duration = yearlyDurationId;
-        // }
-        // else
-        //     data.duration = dailyDurationId;
-
-        // delete data.yearly;
-        // if (!data.category_id) {
-        //     const fetchPoll = await this.getPollByCampaignStartDate(data.campaign_id, data.start_date);
-        //     if (fetchPoll)
-        //         throw ApiError.alreadyExists("Poll of the day already exists on this date");
-        // }
-
-        // if (data.campaign_id && data.category_id) {
-        //     const fetchPoll = await this.getPollByPlutosCampaign(data.campaign_id, data.category_id, data.start_date);
-        //     if (fetchPoll)
-        //         throw ApiError.alreadyExists("Poll of the day already exists on this date");
-
-        // }
-        // console.log("Post>>>", data);
         const newPoll = await Poll.query().insert(data);
 
         const insertOptions = await PollOptionsService.newOptions(newPoll.id, options);
@@ -183,6 +156,18 @@ class PollService {
             poll: newPoll,
             options: insertOptions
         };
+    }
+
+    async fetchCampaignDailyPoll(campaign_id, start_date) {
+        const poll = await Poll.query().findOne({
+            campaign_id: campaign_id,
+            duration_id: 1,
+            start_date: start_date,
+            status: true,
+            is_deleted: false
+        });
+
+        return poll;
     }
 
     async getPollByPlutosCampaign(campaign_id, category_id, start_date) {
@@ -240,22 +225,22 @@ class PollService {
     }
 
     async getPollResults(poll_id) {
-        // console.log(">>>", poll_id);
         const poll = await this.getOne(poll_id);
         if (!poll)
             throw ApiError.notFound("Poll not found");
 
         const totalPollResponses = await UserPollsService.pollResponses(poll_id);
+        console.log("Total", totalPollResponses);
         const pollOptions = await PollOptionsServices.getOptions(poll_id);
+        console.log("options", pollOptions);
         let arr = [];
         for await (const option of pollOptions) {
             const users = await UserPolls.query()
                 .where("poll_id", "=", poll_id)
                 .where("option_id", "=", option.id);
-			
-			const percentage = users.length ? ((users.length / totalPollResponses.length)*100).toPrecision(4) : 0;
-			// console.log("%%", percentage)
-			const total_users = percentage + "%";
+
+            const percentage = users.length ? ((users.length / totalPollResponses.length) * 100).toPrecision(4) : 0;
+            const total_users = percentage + "%";
 
             let obj = {
                 option_id: option.id,
@@ -310,8 +295,8 @@ class PollService {
         // }
 
         if (duration_name === "daily")
-            end_date = TimeUtils.nextDayQuery();
-		
+            end_date = TimeUtils.nextDayQuery()
+
         let poll = await Poll.query()
             .where("campaign_id", "=", campaign_id)
             .where("duration_id", "=", duration_id)
