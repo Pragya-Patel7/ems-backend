@@ -61,8 +61,6 @@ const multipleImages = [
     },
 ];
 
-router.get("/:campaign_id", getPolls);  // Removed auth
-router.post("/", auth, upload.fields(multipleImages), createPoll);
 
 router.get("/yearly", auth, getYearlyPoll);
 router.get("/potd", auth, getPollOfTheDay);
@@ -71,6 +69,7 @@ router.get("/previous/:category_id", auth, getPreviousPolls);
 router.get("/:id", auth, getPollById);
 router.patch("/:id", auth, upload.fields(multipleImages), updatePoll);
 router.delete("/:id", auth, deletePoll);
-
+router.get("/:campaign_id", getPolls);  // Removed auth
+router.post("/", auth, upload.fields(multipleImages), createPoll);
 
 module.exports = router;

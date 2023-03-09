@@ -176,6 +176,7 @@ const getPollOfTheDay = async (req, res) => {
 }
 
 const getPollByDuration = async (req, res) => {
+	// console.log("Srsly!")
     const campaign_id = req.query.campaign_id?.replace(/['"]+/g, '');;
     const duration = req.query.duration?.toLowerCase()?.replace(/['"]+/g, '');;
     if (!campaign_id || !duration)

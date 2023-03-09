@@ -252,12 +252,16 @@ class PollService {
             const users = await UserPolls.query()
                 .where("poll_id", "=", poll_id)
                 .where("option_id", "=", option.id);
+			
+			const percentage = users.length ? ((users.length / totalPollResponses.length)*100).toPrecision(4) : 0;
+			// console.log("%%", percentage)
+			const total_users = percentage + "%";
 
             let obj = {
                 option_id: option.id,
                 option_name: option.option,
                 option_img: option.option_image,
-                total_users: ((users.length / totalPollResponses.length) * 100).toPrecision(4) + '%'
+                total_users: total_users
             }
             arr.push(obj);
         }
@@ -306,8 +310,8 @@ class PollService {
         // }
 
         if (duration_name === "daily")
-            end_date = TimeUtils.nextDay()
-
+            end_date = TimeUtils.nextDayQuery();
+		
         let poll = await Poll.query()
             .where("campaign_id", "=", campaign_id)
             .where("duration_id", "=", duration_id)
@@ -317,7 +321,7 @@ class PollService {
             .where("is_deleted", "=", 0)
             .withGraphFetched({ poll_option: true, activity: true })
 
-        console.log("Poll", poll);
+        // console.log("Poll", poll);
         if (poll.length)
             poll[0].result = await this.getPollResults(poll[0].id);
         return poll;
