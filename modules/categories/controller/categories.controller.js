@@ -6,11 +6,7 @@ const getAllCategory = async (req, res) => {
     try {
         const categories = await CategoryService.getAll();
 
-        const result = {
-            categories: categories
-        }
-
-        return Response.success(res, "Categories found successfully!", result);
+        return Response.success(res, "Categories found successfully!", categories);
     } catch (err) {
         if (err instanceof ApiError)
             return Response.error(res, err);

@@ -6,20 +6,34 @@ exports.down = function (knex) {
         .dropTableIfExists("activity_poll")
         .dropTableIfExists("poll_option")
         .dropTableIfExists("categories")
+        .dropTableIfExists("roles");
 };
 
 exports.up = async function (knex) {
-    await knex.schema.createTable("admins", (table) => {
+    await knex.schema.createTable("roles", (table) => {
         table.uuid("id").primary();
-        table.string("name");
-        table.string("email");
-        table.uuid("campaign_id");
-        table.string("password");
+        table.string("role");
         table.boolean("status");
         table.timestamp("created_at").defaultTo(knex.fn.now());
         table.timestamp("modified_at").defaultTo(knex.fn.now());
         table.boolean("is_deleted");
     })
+
+    await knex.schema.createTable("admins", (table) => {
+        table.uuid("id").primary();
+        table.string("name");
+        table.string("email");
+        table.string("password");
+        table.uuid("campaign_id");
+        table.string("campaign_name")
+        table.uuid("client_id")
+        table.string("client_name")
+        table.integer("role_id")
+        table.boolean("status");
+        table.timestamp("created_at").defaultTo(knex.fn.now());
+        table.timestamp("modified_at").defaultTo(knex.fn.now());
+        table.boolean("is_deleted");
+    })    
 
     await knex.schema.createTable("user_polls", (table) => {
         table.uuid("id").primary();

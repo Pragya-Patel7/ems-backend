@@ -7,7 +7,7 @@ router.get("/result/:pollId", getUserPollResult);
 router.patch("/rollback", rollbackUserPoll);
 router.post("/response", userResponse);
 router.get("/today/:user_id", userTodaysPolls);
-router.get("/", getUserPolls);
-router.post("/", addNewUserPoll);
+router.get("/", auth, getUserPolls);
+// router.post("/", addNewUserPoll);    // ===========Not Required==========
 
 module.exports = router;

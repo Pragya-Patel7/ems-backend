@@ -1,5 +1,6 @@
 const ApiError = require("../../../utils/apiError");
 const Response = require("../../../utils/response");
+const PollService = require("../../poll/services/poll.service");
 const UserPollsService = require("../services/user_polls.service");
 
 const getUserPolls = async (req, res) => {
@@ -18,6 +19,10 @@ const addNewUserPoll = async (req, res) => {
     const data = req.body;
     if (!data.user_id || !data.poll_id || !data.option_id)
         return Response.error(res, ApiError.badRequest("Enter credentials"));
+
+    const fetchPoll = await PollService.getOne(data.poll_id);
+    if (!fetchPoll)
+        throw ApiError.notFound("Poll not found");
     try {
         const newUserPoll = await UserPollsService.create(data);
 
@@ -33,6 +38,8 @@ const addNewUserPoll = async (req, res) => {
 const getUserPollResult = async (req, res) => {
     const pollId = req.params.pollId;
     try {
+        const poll = await PollService.getOne(pollId);
+        if (!poll) return Response.error(res, ApiError.notFound("Poll not found"));
         const result = await UserPollsService.getPollResults(pollId);
 
         return Response.success(res, "Poll results found successfully!", result);
@@ -51,7 +58,7 @@ const rollbackUserPoll = async (req, res) => {
     try {
         const deleteUserPoll = await UserPollsService.deleteUserPoll(user_id, poll_id, option_id);
 
-        return Response.success(res, "User Poll rollback successfully!", null);
+        return Response.success(res, "User response rollback successfully!", true);
     } catch (err) {
         if (err instanceof ApiError)
             return Response.error(res, err);
@@ -64,7 +71,7 @@ const userTodaysPolls = async (req, res) => {
     const user_id = req.params.user_id;
     try {
         const polls = await UserPollsService.todayPolls(user_id);
-        return Response.success(res, "Polls found", polls);
+        return Response.success(res, `This user played ${polls.length} poll today`, polls);
     } catch (err) {
         if (err instanceof ApiError)
             return Response.error(res, err);
@@ -75,6 +82,9 @@ const userTodaysPolls = async (req, res) => {
 
 const userResponse = async (req, res) => {
     const data = req.body;
+    const fetchPoll = await PollService.getOne(data.poll_id);
+    if (!fetchPoll)
+        throw ApiError.notFound("Incorrect poll id");
     try {
         const response = await UserPollsService.result(data);
         return Response.success(res, "User responed and found poll results successfully!", response);

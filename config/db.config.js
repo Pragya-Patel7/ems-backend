@@ -1,5 +1,5 @@
 const { DB_DATABASE, DB_HOST, DB_PASSWORD, DB_USER } = process.env;
-
+const fs = require("fs");
 module.exports = {
     development: {
         client: "mysql2",

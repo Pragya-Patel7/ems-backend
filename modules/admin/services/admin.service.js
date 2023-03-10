@@ -4,26 +4,32 @@ const { v4: uuidv4 } = require("uuid");
 const bcrypt = require("bcrypt");
 
 class AdminService {
+    insertValidation(data) {
+        if (!data.email || !data.password)
+            throw ApiError.badRequest("Email and password are required");
+
+        if (!data.campaign_id || !data.client_id)
+            throw ApiError.badRequest("Client id and campaign id are required");
+
+        if (!data.role_id)
+            throw ApiError.badRequest("Role id is required");
+
+        return true;
+    }
+
     async getAll() {
         const admins = await Admin.query()
             .select("*")
             .where("is_deleted", "=", 0);
 
         if (!admins.length)
-            throw ApiError.notFound("Admins does not exists!");
+            throw ApiError.notFound("Admins does not exist!");
 
-        let adminArr = [];
         admins.map(admin => {
-            let obj = {
-                id: admin.id,
-                name: admin.name,
-                email: admin.email,
-                campaign_id: admin.campaign_id,
-                status: admin.status,
-            }
-            adminArr.push(obj);
+            delete admin.password;
+            delete admin.is_deleted;
         })
-        return adminArr;
+        return admins;
     }
 
     async getById(id) {
@@ -31,69 +37,74 @@ class AdminService {
             .findOne({ id: id })
             .where("is_deleted", "=", 0);
 
-        // console.log("object", admin);
         if (!admin)
-            throw ApiError.notFound("Admin does not exists!");
+            throw ApiError.notFound("Admin does not exist!");
 
-        const shortAdmin = {
-            id: admin.id,
-            name: admin.name,
-            email: admin.email,
-            campaign_id: admin.campaign_id,
-            status: admin.status,
-        }
+        delete admin.password;
+        delete admin.status;
+        delete admin.is_deleted;
 
-        return shortAdmin;
+        return admin;
+    }
+
+    async findByEmail(email) {
+        const admin = await Admin.query().findOne({ email: email, is_deleted: false });
+        return admin;
     }
 
     async newAdmin(data) {
-        const fetchWithEmail = await Admin.query()
-            .select("email")
-            .where("email", "=", data.email);
+        const isValid = this.insertValidation(data);
+        if (!isValid) return;
 
-        if (fetchWithEmail.length)
+        const fetchRegisteredEmail = await this.findByEmail(data.email);
+        if (fetchRegisteredEmail)
             throw ApiError.alreadyExists("This email is already used!")
+
 
         const salt = await bcrypt.genSalt();
         const hashedPassword = await bcrypt.hash(data.password, salt);
 
-        const newAdmin = await Admin.query().insert({
+        let newAdmin = await Admin.query().insert({
             id: uuidv4(),
             name: data.name,
             email: data.email,
             password: hashedPassword,
             campaign_id: data.campaign_id,
-            status: data.status,
-            is_deleted: false,
+            campaign_name: data.campaign_name,
+            client_id: data.client_id,
+            client_name: data.client_name,
+            role_id: data.role_id,
         });
 
-        const admin = {
-            id: newAdmin.id,
-            name: newAdmin.name,
-            email: newAdmin.email,
-            campaign_id: newAdmin.campaign_id,
-            status: newAdmin.status,
-        }
+        newAdmin.password = undefined;
+        newAdmin.status = undefined;
+        newAdmin.is_deleted = undefined;
 
-        return admin;
+        return newAdmin;
+    }
+
+    async findPassword(id) {
+        const { password } = await Admin.query().findById(id).select("password");
+
+        return password;
     }
 
     async updateAdmin(id, data) {
-        if ("is_deleted" in data)
+        if (data.is_deleted)
             throw ApiError.notAuthorized("Cannot re-active the deleted account");
 
-        const fetchAdmin = await Admin.query()
-            .findOne({id: id})
-            .where("is_deleted", "=", 0);
-
+        const fetchAdmin = await this.getById(id);
         if (!fetchAdmin)
-            throw ApiError.badRequest("Admin does not exists!");
+            throw ApiError.badRequest("Admin does not exist");
+
+        const fetchAdminPassword = await this.findPassword(id);
 
         if ("current_password" in data) {
             // Verify old password:
-            const verifyPassword = await bcrypt.compare(data.current_password, fetchAdmin.password);
-            if (!verifyPassword)
-                throw ApiError.notAuthorized("Invalid password!");
+            console.log(data.current_password, fetchAdminPassword);
+            const isValidPassword = await bcrypt.compare(data.current_password, fetchAdminPassword);
+            if (!isValidPassword)
+                throw ApiError.notAuthorized("Invalid password");
 
             // Create new password:
             const salt = await bcrypt.genSalt();
@@ -105,19 +116,14 @@ class AdminService {
             delete data.new_password;
         }
 
-        const fetchedAdminUpdate = await Admin.query().patchAndFetchById(id, data);
-        if (!fetchedAdminUpdate)
+        const updatedAdmin = await Admin.query().patchAndFetchById(id, data);
+        if (!updatedAdmin)
             throw ApiError.internal("Something went wrong");
 
-        const response = {
-            id: fetchedAdminUpdate.id,
-            name: fetchedAdminUpdate.name,
-            email: fetchedAdminUpdate.email,
-            campaign_id: fetchedAdminUpdate.campaign_id,
-            status: fetchedAdminUpdate.status
-        };
+        delete updatedAdmin.password;
+        delete updatedAdmin.is_deleted;
 
-        return response;
+        return updatedAdmin;
     }
 
     async deleteAdmin(id) {
@@ -128,9 +134,8 @@ class AdminService {
             .findById(id)
             .where("is_deleted", "=", 0);
 
-        console.log("admin",fetchAdmin);
         if (!fetchAdmin)
-            throw ApiError.badRequest("Admin does not exists!");
+            throw ApiError.badRequest("Admin does not exist!");
 
         await Admin.query()
             .findById(id)
@@ -146,24 +151,18 @@ class AdminService {
         if (!email || !password)
             throw ApiError.badRequest("Enter credentials!");
 
-        const fetchAdmin = await Admin.query()
-            .select("*")
-            .where("email", "=", email)
-            .where("is_deleted", "=", 0);
+        const admin = await this.findByEmail(email);
 
-        if (!fetchAdmin.length)
+        if (!admin)
             throw ApiError.notFound("Admin not found!");
 
-        const verifyPassword = await bcrypt.compare(password, fetchAdmin[0].password);
+        const verifyPassword = await bcrypt.compare(password, admin.password);
         if (!verifyPassword)
             throw ApiError.notAuthorized("Invalid password!");
 
-        const admin = {
-            id: fetchAdmin[0].id,
-            name: fetchAdmin[0].name,
-            email: fetchAdmin[0].email,
-            campaign_id: fetchAdmin[0].campaign_id,
-        }
+        admin.password = undefined;
+        admin.status = undefined;
+        admin.is_deleted = undefined;
 
         return admin;
     }

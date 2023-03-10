@@ -1,15 +1,12 @@
 const ApiError = require("../../../utils/apiError");
 const Response = require("../../../utils/response");
 const PollService = require("../services/poll.service");
-const PollOptionsService = require("../../poll_options/services/poll_options.services");
-const CategoriesService = require("../../categories/services/categories.service");
 
 const getAllPoles = async (req, res) => {
-    // const campaign_id = req.query.campaign_id;
     const loggedUser = req.user;
     try {
         const polls = await PollService.getAll(loggedUser);
-        return Response.success(res, "All poles found successfully!", polls);
+        return Response.success(res, "All polls found successfully!", polls);
     } catch (err) {
         if (err instanceof ApiError)
             return Response.error(res, err);
@@ -19,9 +16,11 @@ const getAllPoles = async (req, res) => {
 }
 
 const getPolls = async (req, res) => {
-    // console.log("USer", req.user);
-    // const { campaign_id } = req.user;
     const campaign_id = req.params.campaign_id;
+    if (req.user.role_id === 3) {
+        if (req.user.campaign_id !== campaign_id)
+            return Response.error(res, ApiError.notAuthorized("Not authorized to see other campaign's polls"))
+    }
     try {
         const result = await PollService.getByCampaignId(campaign_id);
 
@@ -39,9 +38,6 @@ const getPollById = async (req, res) => {
     if (!id) return Response.error(res, ApiError.badRequest("Id is required"));
     try {
         const poll = await PollService.getOne(id);
-
-        if (!poll)
-            return Response.error(res, ApiError.notFound("Poll not found"));
 
         return Response.success(res, "Poll found successfully!", poll)
     } catch (err) {
@@ -84,8 +80,8 @@ const createPoll = async (req, res) => {
         }
 
         delete data.option_name;
-        data.campaign_id = loggedUser.campaign_id;
-        data.campaign_name = loggedUser.campaign_name;
+        data.campaign_id ? data.campaign_id : loggedUser.campaign_id;
+        data.campaign_name ? data.campaign_name : loggedUser.campaign_name;
         data.created_by = loggedUser.id;
         data.modified_by = loggedUser.id;
 
@@ -120,7 +116,7 @@ const updatePoll = async (req, res) => {
 
         const pollOptions = {};
         if (options.length)
-            pollOptions.optoinImage = options;
+            pollOptions.optionImage = options;
 
         if (data.option_name)
             pollOptions.optionName = data.option_name;
@@ -197,7 +193,7 @@ const getPollByDuration = async (req, res) => {
     const campaign_id = req.query.campaign_id?.replace(/['"]+/g, '');;
     const duration = req.query.duration?.toLowerCase()?.replace(/['"]+/g, '');;
     if (!campaign_id || !duration)
-        throw ApiError.badRequest("Missing campaign id or duration");
+        return Response.error(res, ApiError.badRequest("Missing campaign id or duration"));
     try {
         const poll = await PollService.pollByDuration(campaign_id, duration);
         return Response.success(res, `${duration} poll found successfully!`, poll);

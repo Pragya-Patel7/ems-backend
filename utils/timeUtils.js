@@ -19,6 +19,11 @@ class TimeUtils {
         return date;
     }
 
+    static tomorrow() {
+        const date = new Date(ISTTime.getTime() + 86400000 + offset).toISOString().slice(0, 10);
+        return date;
+    }
+
     static nextDay(start_date) {
         const startDate = new Date(start_date);
         let date = new Date(startDate.getTime() + 86400000 + offset).toISOString().slice(0, 10);

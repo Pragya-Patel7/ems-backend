@@ -1,7 +1,27 @@
 const express = require('express');
 const morgan = require('morgan');
-const corsOptions = require('./config/cors');
+// const corsOptions = require('./config/cors');
+const cors = require("cors");
 const app = express();
+
+const whitelist = ['http://localhost:3000', 'http://127.0.0.1:5500'];
+
+// ✅ Enable pre-flight requests
+app.options('*', cors());
+
+const corsOptions = {
+    credentials: true,
+    origin: (origin, callback) => {
+        if (whitelist.indexOf(origin) !== -1 || !origin) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+};
+
+// console.log("Options>>>", corsOptions);
+app.use(cors(corsOptions));
 
 const VERSION = "v1";
 const ENDPOINT = "api";
@@ -29,7 +49,7 @@ function router(app) {
 router(app);
 
 // middlewares:
-app.use(corsOptions);
+// app.use(corsOptions);
 app.use(morgan(":method :status :url"))
 
 module.exports = app;

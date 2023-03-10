@@ -5,6 +5,7 @@ const Category = require("../model/Category.model");
 class CategoryService {
     async getAll() {
         const categories = await Category.query()
+            .select("id", "name")
             .where("is_deleted", "=", 0);
 
         return categories;
@@ -24,7 +25,7 @@ class CategoryService {
     async updateById(id, data) {
         if ("is_deleted" in data)
             throw ApiError.badRequest("is_deleted action is not allowed!");
-        
+
         const category = await Category.query()
             .findById(id)
             .where("is_deleted", "=", 0);
@@ -45,7 +46,7 @@ class CategoryService {
         if (!category)
             throw ApiError.notFound("Category not found!");
 
-        await Category.query().patchAndFetchById(id, {is_deleted: true});
+        await Category.query().patchAndFetchById(id, { is_deleted: true });
 
         return true;
     }

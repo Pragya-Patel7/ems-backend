@@ -26,9 +26,8 @@ class UserPollsServices {
     }
 
     async getUserOnePoll(user_id, poll_id) {
-        const userPoll = await UserPolls.query().findOne({ user_id: user_id, poll_id: poll_id });
+        const userPoll = await UserPolls.query().findOne({ user_id: user_id, poll_id: poll_id, is_deleted: false });
 
-        console.log("User poll", userPoll);
         return userPoll;
     }
 
@@ -70,10 +69,7 @@ class UserPollsServices {
         if (!fetchPollOption)
             throw ApiError.notFound("Incorrect poll id or option id!");
 
-        const fetchPoll = await PollService.getOne(data.poll_id);
-        if (!fetchPoll)
-            throw ApiError.notFound("Poll not found");
-
+        // Check if already played this poll:
         const newUserPoll = await UserPolls.query().insert({
             id: data.id,
             user_id: data.user_id,
@@ -81,38 +77,31 @@ class UserPollsServices {
             option_id: data.option_id,
         })
 
-        newUserPoll.coin = fetchPoll.coin;
-
         return newUserPoll;
     }
 
     async getPollResults(poll_id) {
-        console.log(">>>", poll_id);
-        const poll = await PollService.getOne(poll_id);
-        if (!poll)
-            throw ApiError.notFound("Poll not found");
-
         const totalPollResponses = await this.pollResponses(poll_id);
         const pollOptions = await PollOptionsServices.getOptions(poll_id);
         let arr = [];
         for await (const option of pollOptions) {
             const users = await UserPolls.query()
                 .where("poll_id", "=", poll_id)
-                .where("option_id", "=", option.id);
+                .where("option_id", "=", option.id)
+                .where("is_deleted", "=", false);
 
+            const total_users = users.length ? ((users.length / totalPollResponses.length) * 100).toFixed(2) + '%' : "0%";
             let obj = {
                 option_id: option.id,
                 option_name: option.option,
                 option_img: option.option_image,
-                total_users: ((users.length / totalPollResponses.length) * 100).toPrecision(4)+'%'
+                total_users: total_users,
             }
             arr.push(obj);
         }
 
         const result = {
             poll_id: poll_id,
-            poll_image: poll.image,
-            question: poll.question,
             total_responses: totalPollResponses.length,
             options: arr
         }
@@ -124,11 +113,12 @@ class UserPollsServices {
         const fetchOption = await UserPolls.query().findOne({
             user_id: userId,
             poll_id: pollId,
-            option_id: optionId
+            option_id: optionId,
+            is_deleted: false
         });
 
         if (!fetchOption)
-            throw ApiError.notFound("This user with poll id and option id not found");
+            throw ApiError.notFound("User not responded to this poll");
 
         await this.delete(fetchOption.id);
 
@@ -145,7 +135,7 @@ class UserPollsServices {
             .where("created_at", "<", nextDay)
             .where("is_deleted", "=", 0);
 
-        return fetchPolls;
+        return { played: fetchPolls.length, polls: fetchPolls };
     }
 
     async storeResponse(user_id, campaign_id, poll_id, option_id) {
@@ -163,27 +153,21 @@ class UserPollsServices {
     async pollResponses(poll_id) {
         const responses = await UserPolls.query()
             .where("poll_id", "=", poll_id)
-            .where("is_deleted", "=", 0);
+            .where("is_deleted", "=", false);
 
         return responses;
     }
 
     async result(data) {
-        // Check if poll exists or not:
-        const fetchPoll = await PollService.getOne(data.poll_id);
-        if (!fetchPoll)
-            throw ApiError.notFound("Incorrect poll id");
-
         // Check if option id is correct:
         const fetchOption = await PollOptionsServices.getOptionDetails(data.option_id, data.poll_id);
         if (!fetchOption)
             throw ApiError.notFound("Incorrect option id");
 
-
         // Check if already played this poll:
         const fetchUserPreviousResponse = await this.getUserOnePoll(data.user_id, data.poll_id);
         if (fetchUserPreviousResponse) {
-            const pollResult = await this.getPollResults(data.poll_id);            
+            const pollResult = await this.getPollResults(data.poll_id);
             return pollResult;
         }
 

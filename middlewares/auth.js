@@ -4,7 +4,7 @@ const Response = require("../utils/response");
 const JwtUtils = require("../utils/jwtUtils");
 
 module.exports = async (req, res, next) => {
-    const token = req.headers.authorization;
+    const token = req.headers.authorization || req.headers.Authorization;
     if (!token || token == "")
         return Response.error(res, ApiError.badRequest("Token is required!"));
     try {
@@ -15,9 +15,6 @@ module.exports = async (req, res, next) => {
         const authorizedAdmin = await AdminService.getById(verifiedAdmin.data.id);
         if (!authorizedAdmin)
             return Response.error(res, ApiError.notAuthorized("Admin not authorized"));
-        
-        if (authorizedAdmin.is_deleted)
-            return Response.error(res, ApiError.notActive("Admin is not active!"));
         
         req.user = authorizedAdmin;
         return next();

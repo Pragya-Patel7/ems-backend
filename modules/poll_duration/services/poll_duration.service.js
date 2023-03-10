@@ -17,9 +17,7 @@ class PollDurationServices{
     }
 
     async findDurationId(duration) {
-        const id = await PollDuration.query()
-            .where("duration", "=", duration)
-            .where("is_deleted", "=", 0);
+        const id = await PollDuration.query().findOne({ duration: duration, is_deleted: false }).select("id", "duration");
         
         return id;
     }

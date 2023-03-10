@@ -22,41 +22,72 @@ class PollService {
         return polls;
     }
 
-    // async getAll() {
-    //     const polls = await Poll.query().where("is_deleted", "=", 0).withGraphFetched({ category: true, poll_option: true, activity: true });
-    //     // const allPolls = await this.getPollDurations(polls);
-
-    //     return polls;
-    // }
-
-    async getAll(user) {
-        // if campaign is Plutos ONE, show all polls OR show polls based on user's role (Super admin or admin):
-        if (user.campaign_id === 1) {
-            const polls = await Poll.query().where("is_deleted", "=", 0).withGraphFetched({ category: true, poll_option: true, activity: true });
+    // Formatting poll details by removing unwanted data and adding required data:
+    async formatPolls(polls) {
+        if (!Array.isArray(polls)) {
+            polls = await this.formatOnePoll(polls)
             return polls;
         }
-                    
-        // Polls by campaign id:
-        // campaign_id = campaign_id.replace(/['"]+/g, '');
+
+        let newPolls = [];
+        for await (let poll of polls) {
+            poll = await this.formatOnePoll(poll);
+            newPolls.push(poll);
+        }
+
+        return newPolls;
+    }
+
+    async formatOnePoll(poll) {
+        const { activity_id, category_id, modified_by, modified_at, is_deleted, ...newPoll } = poll;
+
+        newPoll.poll_option = newPoll.poll_option?.map((option) => {
+            const { poll_id, created_at, modified_at, is_deleted, ...newOption } = option;
+            return newOption;
+        })
+
+        newPoll.category = newPoll.category?.map((category) => {
+            const { created_at, modified_at, status, is_deleted, ...newCategory } = category;
+            return newCategory;
+        })
+
+        delete newPoll.activity.created_at;
+        delete newPoll.activity.modified_at;
+        delete newPoll.activity.status;
+        delete newPoll.activity.is_deleted;
+
+        // Add duration details instead of only id:
+        newPoll.duration = await PollDurationServices.getOne(newPoll.duration_id);
+        delete newPoll.duration_id;
+        delete newPoll.duration.created_at;
+        delete newPoll.duration.modified_at;
+        delete newPoll.duration.status;
+        delete newPoll.duration.is_deleted;
+
+        return newPoll;
+    }
+
+    async getAll(user) {
+        // let polls = [];
+        // If superadmin:
+        if (user.role_id === 1) {
+            let polls = await Poll.query().where("is_deleted", "=", 0).withGraphFetched({ category: true, poll_option: true, activity: true });
+            polls = await this.formatPolls(polls);
+            return polls;
+        }
+
         const campaignPolls = await this.getByCampaignId(user.campaign_id);
+        campaignPolls = await this.formatPolls(campaignPolls);
         return campaignPolls;
     }
 
     async getByCampaignId(campaign_id) {
-        // if, super-admin, show all polls
-        /**Code here */
-        // req.user : user details
-        //
-
-        // If, not super-admin:
-        const polls = await Poll.query()
+        let polls = await Poll.query()
             .where("campaign_id", "=", campaign_id)
             .where("is_deleted", "=", 0)
             .withGraphFetched({ category: true, poll_option: true, activity: true });
 
-        // console.log("Polls", polls);
-        // const allPolls = await this.getPollDurations(polls);
-
+        polls = await this.formatPolls(polls);
         return polls;
     }
 
@@ -66,10 +97,13 @@ class PollService {
             .where("is_deleted", "=", 0)
             .withGraphFetched({ category: true, poll_option: true, activity: true });
 
+        if (!poll)
+            throw ApiError.notFound("Poll not found");
+
         // Poll result:
-        // console.log(">>>", poll);
-        // const result = await this.getPollResults(id);
-        // console.log(">>>", result);
+        poll.result = await this.getPollResults(id);
+
+        poll = await this.formatOnePoll(poll);
         return poll;
     }
 
@@ -84,14 +118,6 @@ class PollService {
         }
 
         return polls;
-    }
-
-    todayDate() {
-        const year = new Date().getFullYear();
-        const month = new Date().getMonth();
-        const date = new Date().getDate();
-
-        return `${year}-${month + 1}-${date}`;
     }
 
     async getPollOfTheDay(category_id, campaign_id) {
@@ -116,22 +142,25 @@ class PollService {
     }
 
     async previousPolls(category_id) {
-        const today = this.todayDate();
+        const today = TimeUtils.date();
 
         const polls = await Poll.query()
             .select("id", "poll_name")
             .where("category_id", "=", category_id)
-            .where("start_date", "<", today)
+            .where("end_date", "<", today)
             .where("is_deleted", "=", 0);
 
 
+        if (!polls.length)
+            throw ApiError.notFound("No previous polls found in this category!");
+        
         return polls;
     }
 
     async newPoll(data, options) {
         // validation of required data: activity_id, poll_name, campaign_id, campaign_name, question, duration_id, start_date
         const { activity_id, poll_name, campaign_id, campaign_name, question, duration_id, start_date } = data;
-        if (!activity_id || !poll_name || !campaign_id || /*!campaign_name ||*/ !question || !duration_id || !start_date)
+        if (!activity_id || !poll_name || !campaign_id || !campaign_name || !question || !duration_id || !start_date)
             throw ApiError.badRequest("Insufficient data to create poll");
 
         data.id = uuidv4();
@@ -146,7 +175,7 @@ class PollService {
         }
 
         // Check if yearly poll already exsits:
-        // Code here
+        // Code here...
 
         const newPoll = await Poll.query().insert(data);
 
@@ -204,6 +233,7 @@ class PollService {
             await PollOptionsService.updateOptions(id, options);
 
         const updatedPoll = await this.getOne(id);
+        delete updatedPoll.result;
 
         return updatedPoll;
     }
@@ -225,14 +255,8 @@ class PollService {
     }
 
     async getPollResults(poll_id) {
-        const poll = await this.getOne(poll_id);
-        if (!poll)
-            throw ApiError.notFound("Poll not found");
-
         const totalPollResponses = await UserPollsService.pollResponses(poll_id);
-        console.log("Total", totalPollResponses);
         const pollOptions = await PollOptionsServices.getOptions(poll_id);
-        console.log("options", pollOptions);
         let arr = [];
         for await (const option of pollOptions) {
             const users = await UserPolls.query()
@@ -253,8 +277,6 @@ class PollService {
 
         const result = {
             poll_id: poll_id,
-            poll_image: poll.image,
-            question: poll.question,
             total_responses: totalPollResponses.length,
             options: arr
         }
@@ -264,51 +286,54 @@ class PollService {
 
     async pollByDuration(campaign_id, duration_name) {
         const duration = await PollDurationServices.findDurationId(duration_name);
-        console.log("Duration", duration);
-        if (!duration.length)
+        if (!duration)
             throw ApiError.notFound("Incorrect duration format");
 
-        const duration_id = duration[0].id;
+        const { id: duration_id } = duration;
         const start_date = TimeUtils.getDate();
         let end_date;
 
         // Switch case:
-        // switch (duration_id) {
-        //     case 1:
-        //         const end_date = TimeUtils.nextDay()
+        /* switch (duration_id) {
+            case 1:
+                const end_date = TimeUtils.nextDay()
 
-        //         console.log("End", end_date);
-        //         let poll = await Poll.query().toLowerCase()
-        //             .where("campaign_id", "=", campaign_id)
-        //             .where("duration_id", "=", duration[0]?.id)
-        //             .where(duration => duration.where("start_date", "=", start_date).orWhere("start_date", ">", start_date))
-        //             .where("end_date", "<", end_date)
-        //             .where("status", "=", 1)
-        //             .where("is_deleted", "=", 0)
-        //             .withGraphFetched({ poll_option: true, activity: true })
+                console.log("End", end_date);
+                let poll = await Poll.query().toLowerCase()
+                    .where("campaign_id", "=", campaign_id)
+                    .where("duration_id", "=", duration[0]?.id)
+                    .where(duration => duration.where("start_date", "=", start_date).orWhere("start_date", ">", start_date))
+                    .where("end_date", "<", end_date)
+                    .where("status", "=", 1)
+                    .where("is_deleted", "=", 0)
+                    .withGraphFetched({ poll_option: true, activity: true })
 
-        //         if (poll.length)
-        //             poll[0].result = await this.getPollResults(poll[0].id);
-        //         return poll;
-        //     default:
-        //         break;
-        // }
+                if (poll.length)
+                    poll[0].result = await this.getPollResults(poll[0].id);
+                return poll;
+            default:
+                break;
+        } */
 
         if (duration_name === "daily")
             end_date = TimeUtils.nextDayQuery()
 
-        let poll = await Poll.query()
-            .where("campaign_id", "=", campaign_id)
-            .where("duration_id", "=", duration_id)
-            .where(duration => duration.where("start_date", "=", start_date).orWhere("start_date", ">", start_date))
+        let poll = await Poll.query().findOne({
+            campaign_id: campaign_id,
+            duration_id: duration_id,
+            status: true,
+            is_deleted: false
+        }).where(duration => duration.where("start_date", "=", start_date).orWhere("start_date", ">", start_date))
             .where("end_date", "<", end_date)
-            .where("status", "=", 1)
-            .where("is_deleted", "=", 0)
-            .withGraphFetched({ poll_option: true, activity: true })
+            .withGraphFetched({ poll_option: true, activity: true, category: true })
 
         // console.log("Poll", poll);
-        if (poll.length)
-            poll[0].result = await this.getPollResults(poll[0].id);
+        if (!poll)
+            throw ApiError.notFound(`Poll (${duration_name}) not found`);
+        // if (poll)
+        poll.result = await this.getPollResults(poll.id);
+
+        poll = await this.formatOnePoll(poll);
         return poll;
     }
 }
