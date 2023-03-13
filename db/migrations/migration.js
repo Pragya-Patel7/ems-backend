@@ -23,6 +23,7 @@ exports.up = async function (knex) {
         table.uuid("id").primary();
         table.string("name");
         table.string("email");
+        table.string("mobile");
         table.string("password");
         table.uuid("campaign_id");
         table.string("campaign_name")
@@ -30,10 +31,12 @@ exports.up = async function (knex) {
         table.string("client_name")
         table.integer("role_id")
         table.boolean("status");
+        table.boolean("created_by");
         table.timestamp("created_at").defaultTo(knex.fn.now());
+        table.boolean("modified_by");
         table.timestamp("modified_at").defaultTo(knex.fn.now());
         table.boolean("is_deleted");
-    })    
+    })
 
     await knex.schema.createTable("user_polls", (table) => {
         table.uuid("id").primary();

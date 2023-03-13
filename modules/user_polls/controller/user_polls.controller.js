@@ -86,8 +86,15 @@ const userResponse = async (req, res) => {
     if (!fetchPoll)
         throw ApiError.notFound("Incorrect poll id");
     try {
-        const response = await UserPollsService.result(data);
-        return Response.success(res, "User responed and found poll results successfully!", response);
+        let response = await UserPollsService.result(data);
+        response.result.question = fetchPoll.question;
+        response.result.coin_value = fetchPoll.activity?.coin_value;
+
+        let msg = "User responed and found poll results successfully!";
+        if (response.alreadyPlayed)
+            msg = "User already this poll and result of poll found successfully!";
+
+        return Response.success(res, msg, response.result);
     } catch (err) {
         if (err instanceof ApiError)
             return Response.error(res, err);

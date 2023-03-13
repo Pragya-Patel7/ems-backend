@@ -1,9 +1,10 @@
 const auth = require("../../../middlewares/auth");
-const { getAdmins, getAdminById, createAdmin, adminLogin, updateAdmin, deleteAdmin, authAdmin } = require("../controller/admin.controller");
+const { getAdmins, getAdminById, createAdmin, adminLogin, updateAdmin, deleteAdmin, authAdmin, getRoles } = require("../controller/admin.controller");
 
 let router = require("express").Router();
 
 router.post("/login", adminLogin);
+router.get("/roles", getRoles)
 router.get("/auth", authAdmin);
 router.get("/:id", auth, getAdminById);
 router.patch("/:id", auth, updateAdmin);

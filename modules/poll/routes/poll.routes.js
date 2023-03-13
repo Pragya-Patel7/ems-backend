@@ -62,17 +62,14 @@ const multipleImages = [
     },
 ];
 
-
-// router.get("/yearly", auth, getYearlyPoll);
-// router.get("/potd", auth, getPollOfTheDay);
-router.get("/duration", getPollByDuration); //
-router.get("/campaigns/:campaign_id", auth, getPolls);  //
+router.get("/duration", getPollByDuration);
+router.get("/campaigns/:campaign_id", auth, getPolls);
 router.get("/previous/:category_id", auth, getPreviousPolls);
-router.get("/:id", getPollById);    //
-router.patch("/:id", auth, upload.fields(multipleImages), updatePoll);  //
-router.delete("/:id", auth, deletePoll);    //
-router.post("/", auth, upload.fields(multipleImages), createPoll);  //
-router.get("/", auth, getAllPoles); //
+router.get("/:id", getPollById);
+router.patch("/:id", auth, upload.fields(multipleImages), updatePoll);
+router.delete("/:id", auth, deletePoll);
+router.post("/", auth, upload.fields(multipleImages), createPoll);
+router.get("/", auth, getAllPoles);
 
 
 module.exports = router;

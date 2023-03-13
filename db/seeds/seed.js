@@ -12,20 +12,11 @@ const user_polls2 = uuidv4();
 const poll_option1 = uuidv4();
 const poll_option2 = uuidv4();
 
-const activity1 = 1;
-const activity2 = 2;
-
 const activity_poll1 = uuidv4();
 const activity_poll2 = uuidv4();
 
 const option1 = uuidv4();
 const option2 = uuidv4();
-
-const category_id1 = uuidv4();
-const category_id2 = uuidv4();
-
-const campaign_id1 = uuidv4();
-const campaign_id2 = uuidv4();
 
 const poll_coin_value = process.env.POLL_ACTIVITY_COIN_VALUE;
 const quiz_coin_value = process.env.QUIZ_ACTIVITY_COIN_VALUE;
@@ -73,6 +64,7 @@ exports.seed = (knex) => {
           id: user1,
           name: "Rahul",
           email: "rahul1210rk@gmail.com",
+          mobile: "9318462049",
           password: `${await password("admin")}`,
           campaign_id: "1",
           campaign_name: "Plutos One",
@@ -80,7 +72,9 @@ exports.seed = (knex) => {
           client_name: "Plutos One",
           role_id: 1,
           status: true,
+          created_by: "1",
           created_at: TimeUtils.date(),
+          modified_by: "1",
           modified_at: TimeUtils.date(),
           is_deleted: 0,
         },
@@ -88,6 +82,7 @@ exports.seed = (knex) => {
           id: user2,
           name: "Yadav",
           email: "rahul@plutos.one",
+          mobile: "9717841330",
           password: `${await password("ems123")}`,
           campaign_id: "b5eb-41d1-80cb-b6cc92318e3b",
           campaign_name: "Hackathon",
@@ -95,7 +90,9 @@ exports.seed = (knex) => {
           client_name: "Reskilll",
           role_id: 1,
           status: true,
+          created_by: user1,
           created_at: TimeUtils.date(),
+          modified_by: user1,
           modified_at: TimeUtils.date(),
           is_deleted: 0,
         },

@@ -168,7 +168,7 @@ class UserPollsServices {
         const fetchUserPreviousResponse = await this.getUserOnePoll(data.user_id, data.poll_id);
         if (fetchUserPreviousResponse) {
             const pollResult = await this.getPollResults(data.poll_id);
-            return pollResult;
+            return { result: pollResult, alreadyPlayed: true };
         }
 
         // Check if not exceed 2 polls limit:
@@ -183,7 +183,7 @@ class UserPollsServices {
         // Fetch poll result:
         let pollResult = await this.getPollResults(data.poll_id);
 
-        return pollResult;
+        return { result: pollResult, alreadyPlayed: false };
     }
 }
 

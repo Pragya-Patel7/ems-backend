@@ -2,14 +2,17 @@ const ApiError = require("../../../utils/apiError");
 const Admin = require("../model/Admin.model")
 const { v4: uuidv4 } = require("uuid");
 const bcrypt = require("bcrypt");
+const knex = require("../../../config/db.config");
+const TimeUtils = require("../../../utils/timeUtils");
+// const knex = require("");
 
 class AdminService {
     insertValidation(data) {
         if (!data.email || !data.password)
             throw ApiError.badRequest("Email and password are required");
 
-        if (!data.campaign_id || !data.client_id)
-            throw ApiError.badRequest("Client id and campaign id are required");
+        // if (!data.campaign_id || !data.client_id)
+        //     throw ApiError.badRequest("Client id and campaign id are required");
 
         if (!data.role_id)
             throw ApiError.badRequest("Role id is required");
@@ -41,7 +44,6 @@ class AdminService {
             throw ApiError.notFound("Admin does not exist!");
 
         delete admin.password;
-        delete admin.status;
         delete admin.is_deleted;
 
         return admin;
@@ -68,16 +70,18 @@ class AdminService {
             id: uuidv4(),
             name: data.name,
             email: data.email,
+            mobile: data.mobile,
             password: hashedPassword,
             campaign_id: data.campaign_id,
             campaign_name: data.campaign_name,
             client_id: data.client_id,
             client_name: data.client_name,
             role_id: data.role_id,
+            created_by: data.created_by,
+            modified_by: data.modified_by,
         });
 
         newAdmin.password = undefined;
-        newAdmin.status = undefined;
         newAdmin.is_deleted = undefined;
 
         return newAdmin;
@@ -116,6 +120,8 @@ class AdminService {
             delete data.new_password;
         }
 
+
+        data.modified_at = TimeUtils.date();
         const updatedAdmin = await Admin.query().patchAndFetchById(id, data);
         if (!updatedAdmin)
             throw ApiError.internal("Something went wrong");
@@ -143,7 +149,7 @@ class AdminService {
                 is_deleted: true
             });
 
-        return true;
+        return { id: id };
     }
 
     async adminLogin(data) {
@@ -165,6 +171,13 @@ class AdminService {
         admin.is_deleted = undefined;
 
         return admin;
+    }
+
+    async roles() {
+        const query = "SELECT id, role FROM roles WHERE is_deleted = 0 AND status = 1";
+        const [roles, fields] = await knex.raw(query)
+
+        return roles;
     }
 }
 

@@ -4,7 +4,6 @@ const Response = require("../../../utils/response");
 const AdminService = require("../services/admin.service");
 
 const getAdmins = async (req, res) => {
-    console.log("req", req.user);
     if (req.user.role_id === 3) return Response.error(res, ApiError.notAuthorized());
     try {
         const result = await AdminService.getAll();
@@ -46,6 +45,9 @@ const createAdmin = async (req, res) => {
     const data = req.body;
     const dataLength = Object.keys(data).length;
     if (!dataLength) return Response.error(res, ApiError.badRequest("Details are required to create admin"));
+
+    data.created_by = loggedUser.id;
+    data.modified_by = loggedUser.id;
     try {
         const admin = await AdminService.newAdmin(data);
 
@@ -63,6 +65,8 @@ const updateAdmin = async (req, res) => {
     const data = req.body;
     const dataLength = Object.keys(data).length;
     if (!dataLength) throw ApiError.badRequest("Details are required");
+
+    data.modified_by = req.user.id;
     try {
         const result = await AdminService.updateAdmin(id, data);
 
@@ -134,6 +138,17 @@ const authAdmin = async (req, res) => {
         return Response.error(res, ApiError.internal(err));
     }
 }
+const getRoles = async (req, res) => {
+    try {
+        const roles = await AdminService.roles();
+        return Response.success(res, "Roles found successfully!", roles);
+    } catch (err) {
+        if (err instanceof ApiError)
+            return Response.error(res, ApiError.notAuthorized());
+
+        return Response.error(res, ApiError.internal(err));
+    }
+}
 
 module.exports = {
     getAdmins,
@@ -142,5 +157,6 @@ module.exports = {
     adminLogin,
     updateAdmin,
     deleteAdmin,
-    authAdmin
+    authAdmin,
+    getRoles
 }
