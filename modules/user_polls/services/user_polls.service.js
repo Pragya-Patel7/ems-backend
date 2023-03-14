@@ -90,7 +90,9 @@ class UserPollsServices {
                 .where("option_id", "=", option.id)
                 .where("is_deleted", "=", false);
 
-            const total_users = users.length ? ((users.length / totalPollResponses.length) * 100).toFixed(2) + '%' : "0%";
+            let total_users = users.length ? ((users.length / totalPollResponses.length) * 100).toFixed(2) : "0";
+            total_users = total_users.split(".");
+            total_users = total_users[0] + "%";
             let obj = {
                 option_id: option.id,
                 option_name: option.option,

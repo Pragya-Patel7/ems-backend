@@ -10,6 +10,8 @@ const UserPollsService = require("../../user_polls/services/user_polls.service")
 const PollOptionsServices = require("../../poll_options/services/poll_options.services");
 const UserPolls = require("../../user_polls/model/User_polls.model");
 const setEndDate = require("../../../utils/endDate");
+// const { knex } = require("../model/Poll.model");
+const knex = require("../../../config/db.config")
 
 class PollService {
     async getPollDurations(pollArr) {
@@ -97,13 +99,15 @@ class PollService {
             .where("is_deleted", "=", 0)
             .withGraphFetched({ category: true, poll_option: true, activity: true });
 
-        if (!poll)
-            throw ApiError.notFound("Poll not found");
+        // if (!poll)
+        //     throw ApiError.notFound("Poll not found");
 
         // Poll result:
-        poll.result = await this.getPollResults(id);
+        if (poll) {
+            poll.result = await this.getPollResults(id);
+            poll = await this.formatOnePoll(poll);
+        }
 
-        poll = await this.formatOnePoll(poll);
         return poll;
     }
 
@@ -153,7 +157,7 @@ class PollService {
 
         if (!polls.length)
             throw ApiError.notFound("No previous polls found in this category!");
-        
+
         return polls;
     }
 
@@ -335,6 +339,13 @@ class PollService {
 
         poll = await this.formatOnePoll(poll);
         return poll;
+    }
+
+    async durations() {
+        const query = "SELECT id, duration FROM poll_duration WHERE is_deleted = 0 AND status = 1";
+        const [durations, fields] = await knex.raw(query);
+
+        return durations;
     }
 }
 

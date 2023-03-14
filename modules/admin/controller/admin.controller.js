@@ -129,7 +129,7 @@ const authAdmin = async (req, res) => {
         if (!admin)
             return Response.error(res, ApiError.notAuthorized("Admin not authorized"));
 
-        console.log("Auth", admin);
+        // console.log("Auth", admin);
         return Response.success(res, "Admin found and is verified", admin);
     } catch (err) {
         if (err instanceof ApiError)

@@ -9,7 +9,8 @@ const {
     getPollOfTheDay,
     getPreviousPolls,
     getPollByDuration,
-    getAllPoles
+    getAllPoles,
+    getDurations
 } = require("../controller/poll.controller");
 const auth = require("../../../middlewares/auth");
 
@@ -62,6 +63,7 @@ const multipleImages = [
     },
 ];
 
+router.get("/durations", getDurations);
 router.get("/duration", getPollByDuration);
 router.get("/campaigns/:campaign_id", auth, getPolls);
 router.get("/previous/:category_id", auth, getPreviousPolls);

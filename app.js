@@ -4,7 +4,14 @@ const morgan = require('morgan');
 const cors = require("cors");
 const app = express();
 
-const whitelist = ['http://localhost:3000', 'http://127.0.0.1:5500'];
+const whitelist = [
+    'http://localhost:3001',
+    'http://127.0.0.1:5500',
+    "http://192.168.1.13:3001",
+    "http://192.168.1.11:3000",
+    "http://192.168.1.1:3001",
+    "http://192.168.1.38:3001"
+];
 
 // ✅ Enable pre-flight requests
 app.options('*', cors());
@@ -40,9 +47,10 @@ function router(app) {
     app.use(`/${ENDPOINT}/${VERSION}/admins`, adminRouter);
     app.use(`/${ENDPOINT}/${VERSION}/activity`, activityRouter);
     app.use(`/${ENDPOINT}/${VERSION}/categories`, categoryRouter);
-    
+
     app.use(`/${ENDPOINT}/${VERSION}/polls/user`, userPollRouter);
     app.use(`/${ENDPOINT}/${VERSION}/polls`, pollsRouter);
+    app.use(`/${ENDPOINT}/${VERSION}/storage`, express.static("storage"));
 }
 
 // Initializing routes:

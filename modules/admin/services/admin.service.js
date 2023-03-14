@@ -103,21 +103,21 @@ class AdminService {
 
         const fetchAdminPassword = await this.findPassword(id);
 
-        if ("current_password" in data) {
+        if ("password" in data) {
             // Verify old password:
-            console.log(data.current_password, fetchAdminPassword);
-            const isValidPassword = await bcrypt.compare(data.current_password, fetchAdminPassword);
-            if (!isValidPassword)
-                throw ApiError.notAuthorized("Invalid password");
+            // console.log(data.password, fetchAdminPassword);
+            // const isValidPassword = await bcrypt.compare(data.password, fetchAdminPassword);
+            // if (!isValidPassword)
+            //     throw ApiError.notAuthorized("Invalid password");
 
             // Create new password:
             const salt = await bcrypt.genSalt();
-            const hashedPassword = await bcrypt.hash(data.new_password, salt);
+            const hashedPassword = await bcrypt.hash(data.password, salt);
             data.password = hashedPassword;
 
             // Delete current password from receiving data from body:
-            delete data.current_password;
-            delete data.new_password;
+            delete data.password;
+            // delete data.new_password;
         }
 
 

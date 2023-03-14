@@ -22,7 +22,7 @@ const addNewUserPoll = async (req, res) => {
 
     const fetchPoll = await PollService.getOne(data.poll_id);
     if (!fetchPoll)
-        throw ApiError.notFound("Poll not found");
+        return Response.error(res, ApiError.notFound("Poll not found"));
     try {
         const newUserPoll = await UserPollsService.create(data);
 
@@ -40,7 +40,9 @@ const getUserPollResult = async (req, res) => {
     try {
         const poll = await PollService.getOne(pollId);
         if (!poll) return Response.error(res, ApiError.notFound("Poll not found"));
-        const result = await UserPollsService.getPollResults(pollId);
+        let result = await UserPollsService.getPollResults(pollId);
+        result.question = poll.question;
+        result.coin_value = poll.activity.coin_value;
 
         return Response.success(res, "Poll results found successfully!", result);
     } catch (err) {
@@ -84,7 +86,7 @@ const userResponse = async (req, res) => {
     const data = req.body;
     const fetchPoll = await PollService.getOne(data.poll_id);
     if (!fetchPoll)
-        throw ApiError.notFound("Incorrect poll id");
+        return Response.error(res, ApiError.notFound("Incorrect poll id"));
     try {
         let response = await UserPollsService.result(data);
         response.result.question = fetchPoll.question;

@@ -70,9 +70,10 @@ const createPoll = async (req, res) => {
         }
 
         // Check: only option names or images or no. of names and images equal:
-        if (data.option_name && options.length)
+        if (data.option_name && options.length) {
             if (data.option_name.length !== options.length)
                 return Response.error(res, ApiError.badRequest("Poll options and images length are mismatched"))
+        }
 
         const pollOptions = {
             optionName: data.option_name,
@@ -80,8 +81,8 @@ const createPoll = async (req, res) => {
         }
 
         delete data.option_name;
-        data.campaign_id ? data.campaign_id : loggedUser.campaign_id;
-        data.campaign_name ? data.campaign_name : loggedUser.campaign_name;
+        // data.campaign_id ? data.campaign_id : loggedUser.campaign_id;
+        // data.campaign_name ? data.campaign_name : loggedUser.campaign_name;
         data.created_by = loggedUser.id;
         data.modified_by = loggedUser.id;
 
@@ -220,6 +221,19 @@ const getPreviousPolls = async (req, res) => {
     }
 }
 
+const getDurations = async (req, res) => {
+    try {
+        const durations = await PollService.durations();
+
+        return Response.success(res, "Durations found successfully!", durations);
+    } catch (err) {
+        if (err instanceof ApiError)
+            return Response.error(res, err);
+
+        return Response.error(res, ApiError.internal(err));
+    }
+}
+
 module.exports = {
     getAllPoles,
     getPolls,
@@ -230,5 +244,6 @@ module.exports = {
     getYearlyPoll,
     getPollOfTheDay,
     getPreviousPolls,
-    getPollByDuration
+    getPollByDuration,
+    getDurations
 }
